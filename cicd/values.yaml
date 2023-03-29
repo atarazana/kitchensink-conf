@@ -1,0 +1,60 @@
+appName: arco
+
+gitUrl: https://github.com
+gitRevision: main
+gitUsername: cvicens
+baseRepoName: arco-saer-conf
+
+ocpVersion: "4.10"
+
+containerRegistryServer: quay.io
+containerRegistryOrg: varadero
+
+cicdNamespace: arco-saer-cicd
+
+buildahBuilderImage: registry.redhat.io/rhel8/buildah@sha256:6a68ece207bc5fd8db2dd5cc2d0b53136236fb5178eb5b71eebe5d07a3c33d13
+jbossEapBuilderImage: image-registry.openshift-image-registry.svc:5000/arco-saer-cicd/jboss-eap-openshift:1.2
+
+sourceWorkspaceSize: 10Gi
+cacheWorkspaceSize: 10Gi
+
+pipelinesServiceAccountName: build-bot
+jenkinsServiceAccountName: jenkins-bot
+
+containerRegistrySecretName: container-registry-secret
+gitPatSecretName: git-pat-secret
+gitPatSecretKey: password
+
+gitSslVerify: true
+
+# Pipelines have these stages => overlays
+overlays: "dev,test"
+
+# Service names Gramola is made of services, these are their names
+arcoSaerServiceName: saer
+
+# Overlays relative path in the config repository
+arcoSaerOverlayPath: ./arco-saer-deployment/overlays
+
+# Sub Overlays names separated by blank
+arcoSaerSubOverlays: 'L01 L02'
+
+# Pipeline names
+
+## These pipelines run CI tasks and are triggered by PUSH to the source code git repo
+## The final task sends a PR to the config repository for the first overlay
+arcoSaerContinuosIntegrationPipeline: arco-saer-ci-pl
+
+## These pipelines run CD tasks and are triggered by PULL REQUESTS closed and merged to the config repo
+arcoSaerContinuosDeliveryPipeline: arco-saer-cd-pl
+
+# Pipelines triggers
+
+## CI pipelines triggered by PUSH
+arcoSaerCiPushTriggerRootName: arco-saer-ci-pl-push
+
+## CD pipelines triggered by PR closed and merged
+arcoSaerCdPrTriggerRootName: arco-saer-cd-pl-pr
+
+## MAVEN MIRROR
+mavenMirror: http://nexus.metromadrid.net:8081/nexus/repository/maven-public

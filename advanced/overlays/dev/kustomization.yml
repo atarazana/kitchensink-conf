@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../../helm_base
+namespace: demo-7-dev
+commonLabels:
+  app.kubernetes.io/part-of: kitchensink-app
+  app.kubernetes.io/managed-by: argocd
+# generatorOptions:
+#   disableNameSuffixHash: true
+secretGenerator:
+  - name: kitchensink-database-secret
+    behavior: replace
+    literals:
+      - DB_HOST=kitchensink-db
+      - DB_USERNAME=luke
+      - DB_PASSWORD=secret
+      - DB_NAME=kitchensink
+# images:
+#   - name: gramola-events:0.0.0
+#     newName: quay.io/atarazana/gramola-events@sha256
+#     newTag: d833e14ed4751911ae153a80f56820ce04880aa6d8dbdc73f704f2303c365ad4
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: kitchensink
+    path: patch/deployment_patch.yml

@@ -1,0 +1,23 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: kitchensink-db
+  labels:
+    app: kitchensink-db
+    app.kubernetes.io/component: kitchensink-db
+    app.kubernetes.io/instance: kitchensink-db
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: 5432-tcp
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    deployment: kitchensink-db
+

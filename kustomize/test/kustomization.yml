@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../../basic
+namespace: demo-5-test
+commonLabels:
+  app.kubernetes.io/part-of: kitchensink-app
+  app.kubernetes.io/managed-by: argocd
+secretGenerator:
+  - name: kitchensink-database-secret
+    literals:
+      - DB_HOST=events-database
+      - DB_USER=luke
+      - DB_PASSWORD=secret
+      - DB_NAME=EVENTS
+# images:
+#   - name: gramola-events:0.0.0
+#     newName: quay.io/atarazana/gramola-events@sha256
+#     newTag: d833e14ed4751911ae153a80f56820ce04880aa6d8dbdc73f704f2303c365ad4
+patchesJson6902:
+  - target:
+      group: apps.openshift.io
+      version: v1
+      kind: DeploymentConfig
+      name: kitchensink
+    path: patch/deployment_patch.yml

@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../../basic
+namespace: demo-5-dev
+commonLabels:
+  app.kubernetes.io/part-of: kitchensink-app
+  app.kubernetes.io/managed-by: argocd
+secretGenerator:
+  - name: kitchensink-database-secret
+    literals:
+      - DB_HOST=events-database
+      - DB_USER=luke
+      - DB_PASSWORD=secret
+      - DB_NAME=EVENTS
+# images:
+#   - name: kitchensink:0.0.0
+#     newName: image-registry.openshift-image-registry.svc:5000/demo-5-dev/kitchensink
+#     newTag: latest
+patchesJson6902:
+  - target:
+      group: apps.openshift.io
+      version: v1
+      kind: DeploymentConfig
+      name: kitchensink
+    path: patch/deployment_patch.yml

@@ -1,0 +1,15 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  lookupPolicy:
+    local: false
+

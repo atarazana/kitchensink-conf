@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kitchensink-basic
+  namespace: openshift-gitops
+  labels:
+    argocd-root-app: "true"
+spec:
+  generators:
+  - list:
+      elements:
+      - env: demo-4a
+        desc: "Demo 4a"
+      - env: demo-4b
+        desc: "Demo 4b"
+  template:
+    metadata:
+      name: kitchensink-basic-app-{{ env }}
+      namespace: openshift-gitops
+      labels:
+        kitchensink-root-app: "true"
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    spec:
+      destination:
+        namespace: '{{ env }}'
+        name: in-cluster
+      ignoreDifferences:
+      - group: apps.openshift.io
+        kind: DeploymentConfig
+        jqPathExpressions:
+          - .spec.template.spec.containers[].image
+      project: default
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        path: basic/base
+        repoURL: "https://github.com/atarazana/kitchensink-conf"
+        targetRevision: main

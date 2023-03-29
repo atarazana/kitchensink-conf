@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kitchensink-helm-app
+  namespace: openshift-gitops
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    kitchensink-root-app: 'true'
+spec:
+  destination:
+    name: in-cluster
+    namespace: demo-6
+  ignoreDifferences:
+    - group: apps.openshift.io
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].image'
+      kind: DeploymentConfig
+  project: default
+  source:
+    helm:
+      parameters:
+        - name: baseNamespace
+          value: demo-6
+    path: advanced/helm_base
+    repoURL: 'https://github.com/atarazana/kitchensink-conf'
+    targetRevision: main
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

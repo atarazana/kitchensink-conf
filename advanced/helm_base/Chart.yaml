@@ -1,0 +1,6 @@
+
+apiVersion: v1
+appVersion: "1.0"
+description: Helm Chart for Kitchensink Microservice
+name: kitchensink
+version: 0.1.0

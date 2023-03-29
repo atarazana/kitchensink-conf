@@ -1,0 +1,571 @@
+---
+# Source: kitchensink/templates/kitchensink-db-secret.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: kitchensink-database-secret
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+stringData:
+  DB_HOST: kitchensink-db
+  DB_USERNAME: luke
+  DB_PASSWORD: secret
+  DB_NAME: kitchensink
+type: Opaque
+---
+# Source: kitchensink/templates/kitchensink-db-svc.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: kitchensink-db
+  labels:
+    app: kitchensink-db
+    app.kubernetes.io/component: kitchensink-db
+    app.kubernetes.io/instance: kitchensink-db
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: 5432-tcp
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    deployment: kitchensink-db
+---
+# Source: kitchensink/templates/kitchensink-svc.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  annotations:
+    description: The web server's http port.  
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    deploymentConfig: kitchensink
+---
+# Source: kitchensink/templates/kitchensink-svc.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: kitchensink-ping
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  annotations:
+    description: The JGroups ping port for clustering.
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: 'true'
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: ping
+      protocol: TCP
+      port: 8888
+      targetPort: 8888
+  internalTrafficPolicy: Cluster
+  clusterIPs:
+    - None
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    deployment: kitchensink
+---
+# Source: kitchensink/templates/kitchensink-db-deployment.yaml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kitchensink-db
+  labels:
+    app: kitchensink-db
+    app.kubernetes.io/component: kitchensink-db
+    app.kubernetes.io/instance: kitchensink-db
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: kitchensink-db
+      app: kitchensink-db
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        deployment: kitchensink-db
+        app: kitchensink-db
+    spec:
+      containers:
+        - name: kitchensink-db
+          image: >-
+            centos/postgresql-10-centos7:latest
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: kitchensink-database-secret
+                  key: DB_NAME
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kitchensink-database-secret
+                  key: DB_PASSWORD
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kitchensink-database-secret
+                  key: DB_USERNAME
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+      imagePullSecrets: []
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  paused: false
+---
+# Source: kitchensink/templates/kitchensink-deployment.yaml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"kitchensink-db"}]'
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: jboss
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      deployment: kitchensink
+      application: kitchensink
+  template:
+    metadata:
+      name: kitchensink
+      labels:
+        application: kitchensink
+        deployment: kitchensink
+    spec:
+      containers:
+        - name: kitchensink
+          resources:
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/readinessProbe.sh false
+            initialDelaySeconds: 90
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          terminationMessagePath: /dev/termination-log
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/livenessProbe.sh
+            initialDelaySeconds: 90
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          env:
+            - name: JGROUPS_PING_PROTOCOL
+              value: dns.DNS_PING
+            - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+              value: kitchensink-ping
+            - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+              value: '8888'
+            - name: MQ_CLUSTER_PASSWORD
+              value: qikxvPWi
+            - name: MQ_QUEUES
+            - name: MQ_TOPICS
+            - name: JGROUPS_CLUSTER_PASSWORD
+              value: 2jNmb3nC
+            - name: AUTO_DEPLOY_EXPLODED
+              value: 'false'
+            - name: DB_HOST
+              value: kitchensink-db
+            - name: DB_PORT
+              value: '5432'
+            - name: DB_NAME
+              value: kitchensink
+            - name: DB_USERNAME
+              value: luke
+            - name: DB_PASSWORD
+              value: secret
+          ports:
+            - name: jolokia
+              containerPort: 8778
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: ping
+              containerPort: 8888
+              protocol: TCP
+          imagePullPolicy: Always
+          terminationMessagePolicy: File
+          image: image-registry.openshift-image-registry.svc:5000/demo-6/kitchensink:latest
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 75
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+---
+# Source: kitchensink/templates/kitchensink-op-wildflyserver.yaml
+# ---
+# kind: Secret
+# apiVersion: v1
+# metadata:
+#   name: eap-config
+# type: Opaque
+# stringData:
+#   DB_HOST: kitchensink-db
+#   DB_NAME: kitchensink
+#   DB_PASSWORD: secret
+#   DB_PORT: '5432'
+#   DB_USERNAME: luke
+#   JGROUPS_PING_PROTOCOL: kubernetes.KUBE_PING
+#   # KUBERNETES_NAMESPACE: $(oc project)
+#   KUBERNETES_LABELS: application=kitchen-sink
+# ---
+# apiVersion: wildfly.org/v1alpha1
+# kind: WildFlyServer
+# metadata:
+#   name: kitchen-sink
+# spec:
+#   applicationImage: 'kitchensink:latest'
+#   envFrom:
+#     - secretRef:
+#         name: eap-config
+#   replicas: 3
+---
+# Source: kitchensink/templates/kitchensink-bc.yaml
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'kitchensink:latest'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: 'jboss-eap72-openshift:1.2'
+      env:
+        - name: MAVEN_MIRROR_URL
+        - name: MAVEN_ARGS_APPEND
+          value: '-Dcom.redhat.xpaas.repo.jbossorg'
+        - name: ARTIFACT_DIR
+      incremental: true
+      forcePull: true
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/atarazana/kitchensink'
+      ref: main
+  triggers:
+    - type: GitHub
+      github:
+        secret: PauCH5th
+    - type: Generic
+      generic:
+        secret: DXNNoNSt
+    - type: ImageChange
+      imageChange: {}
+    - type: ConfigChange
+  runPolicy: Serial
+---
+# Source: kitchensink/templates/kitchensink-bc.yaml
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: kitchensink-quay
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: DockerImage
+      name: 'myregistry-quay-app.quay-system/demos/kitchensink:latest'
+    pushSecret:
+      name: quay-creds
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: 'jboss-eap72-openshift:1.2'
+      env:
+        - name: MAVEN_MIRROR_URL
+        - name: MAVEN_ARGS_APPEND
+          value: '-Dcom.redhat.xpaas.repo.jbossorg'
+        - name: ARTIFACT_DIR
+      incremental: true
+      forcePull: true
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/atarazana/kitchensink'
+      ref: main
+  triggers:
+    - type: GitHub
+      github:
+        secret: PauCH5th
+    - type: Generic
+      generic:
+        secret: DXNNoNSt
+    - type: ImageChange
+      imageChange: {}
+    - type: ConfigChange
+  runPolicy: Serial
+---
+# Source: kitchensink/templates/kitchensink-dc.yaml
+kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  annotations:
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"kitchensink-db"}]'
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: jboss
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  strategy:
+    type: Recreate
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    activeDeadlineSeconds: 21600
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - kitchensink
+        from:
+          kind: ImageStreamTag
+          name: 'kitchensink:latest'
+    - type: ConfigChange
+  replicas: 1
+  revisionHistoryLimit: 10
+  test: false
+  selector:
+    deploymentConfig: kitchensink
+  template:
+    metadata:
+      name: kitchensink
+      creationTimestamp: null
+      labels:
+        application: kitchensink
+        deploymentConfig: kitchensink
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+    spec:
+      containers:
+        - resources:
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/readinessProbe.sh false
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          terminationMessagePath: /dev/termination-log
+          name: kitchensink
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/livenessProbe.sh
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          envFrom:
+            - secretRef:
+                name: kitchensink-database-secret
+          env:
+            - name: JGROUPS_PING_PROTOCOL
+              value: dns.DNS_PING
+            - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+              value: kitchensink-ping
+            - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+              value: '8888'
+            - name: MQ_CLUSTER_PASSWORD
+              value: qwerqwerqw
+            - name: MQ_QUEUES
+            - name: MQ_TOPICS
+            - name: JGROUPS_CLUSTER_PASSWORD
+              value: 24rqeqt34
+            - name: AUTO_DEPLOY_EXPLODED
+              value: 'false'
+            # - name: DB_HOST
+            #   value: kitchensink-db
+            # - name: DB_PORT
+            #   value: '5432'
+            # - name: DB_NAME
+            #   value: kitchensink
+            # - name: DB_USERNAME
+            #   value: luke
+            # - name: DB_PASSWORD
+            #   value: secret
+          ports:
+            - name: jolokia
+              containerPort: 8778
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: ping
+              containerPort: 8888
+              protocol: TCP
+          imagePullPolicy: Always
+          terminationMessagePolicy: File
+          image: 'kitchensink:latest'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 75
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+---
+# Source: kitchensink/templates/kitchensink-is.yaml
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  lookupPolicy:
+    local: false
+---
+# Source: kitchensink/templates/kitchensink-route.yaml
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  annotations:
+    description: Route for application's https service.
+    openshift.io/host.generated: 'true'
+spec:
+  to:
+    kind: Service
+    name: kitchensink
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

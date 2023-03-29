@@ -1,0 +1,396 @@
+apiVersion: v1
+data:
+  DB_HOST: ZXZlbnRzLWRhdGFiYXNl
+  DB_NAME: RVZFTlRT
+  DB_PASSWORD: c2VjcmV0
+  DB_USER: bHVrZQ==
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+  name: kitchensink-database-secret-5f95ffb7bh
+  namespace: demo-5-test
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    description: The web server's http port.
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink
+  namespace: demo-5-test
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    deploymentConfig: kitchensink
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kitchensink-db
+    app.kubernetes.io/component: kitchensink-db
+    app.kubernetes.io/instance: kitchensink-db
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+  name: kitchensink-db
+  namespace: demo-5-test
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: 5432-tcp
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    deployment: kitchensink-db
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    description: The JGroups ping port for clustering.
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink-ping
+  namespace: demo-5-test
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: ping
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    deploymentConfig: kitchensink
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kitchensink-db
+    app.kubernetes.io/component: kitchensink-db
+    app.kubernetes.io/instance: kitchensink-db
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: postgresql
+  name: kitchensink-db
+  namespace: demo-5-test
+spec:
+  paused: false
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: kitchensink-db
+      app.kubernetes.io/managed-by: argocd
+      app.kubernetes.io/part-of: kitchensink-app
+      deployment: kitchensink-db
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: kitchensink-db
+        app.kubernetes.io/managed-by: argocd
+        app.kubernetes.io/part-of: kitchensink-app
+        deployment: kitchensink-db
+    spec:
+      containers:
+      - env:
+        - name: POSTGRESQL_DATABASE
+          value: kitchensink
+        - name: POSTGRESQL_PASSWORD
+          value: secret
+        - name: POSTGRESQL_USER
+          value: luke
+        image: centos/postgresql-10-centos7:latest
+        imagePullPolicy: IfNotPresent
+        name: kitchensink-db
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      imagePullSecrets: []
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"kitchensink-db"}]'
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: jboss
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink
+  namespace: demo-5-test
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    deploymentConfig: kitchensink
+  strategy:
+    activeDeadlineSeconds: 21600
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/managed-by: argocd
+        app.kubernetes.io/part-of: kitchensink-app
+        application: kitchensink
+        deploymentConfig: kitchensink
+      name: kitchensink
+    spec:
+      containers:
+      - env:
+        - name: JGROUPS_PING_PROTOCOL
+          value: dns.DNS_PING
+        - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+          value: kitchensink-ping
+        - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+          value: "8888"
+        - name: MQ_CLUSTER_PASSWORD
+          value: qwerqwerqw
+        - name: MQ_QUEUES
+        - name: MQ_TOPICS
+        - name: JGROUPS_CLUSTER_PASSWORD
+          value: 24rqeqt34
+        - name: AUTO_DEPLOY_EXPLODED
+          value: "false"
+        - name: DB_HOST
+          value: kitchensink-db
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: kitchensink
+        - name: DB_USERNAME
+          value: luke
+        - name: DB_PASSWORD
+          value: secret
+        image: kitchensink:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /opt/eap/bin/livenessProbe.sh
+          failureThreshold: 5
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: kitchensink
+        ports:
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8888
+          name: ping
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /opt/eap/bin/readinessProbe.sh false
+          failureThreshold: 5
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            memory: 1Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 75
+  test: false
+  triggers:
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - kitchensink
+      from:
+        kind: ImageStreamTag
+        name: kitchensink:latest
+    type: ImageChange
+  - type: ConfigChange
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink
+  namespace: demo-5-test
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: kitchensink:latest
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    git:
+      ref: main
+      uri: https://github.com/atarazana/kitchensink
+    type: Git
+  strategy:
+    sourceStrategy:
+      env:
+      - name: MAVEN_MIRROR_URL
+      - name: MAVEN_ARGS_APPEND
+        value: -Dcom.redhat.xpaas.repo.jbossorg
+      - name: ARTIFACT_DIR
+      forcePull: true
+      from:
+        kind: ImageStreamTag
+        name: jboss-eap72-openshift:1.2
+        namespace: openshift
+      incremental: true
+    type: Source
+  successfulBuildsHistoryLimit: 5
+  triggers:
+  - github:
+      secret: PauCH5th
+    type: GitHub
+  - generic:
+      secret: DXNNoNSt
+    type: Generic
+  - imageChange: {}
+    type: ImageChange
+  - type: ConfigChange
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink
+  namespace: demo-5-test
+spec:
+  lookupPolicy:
+    local: false
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    description: Route for application's https service.
+    openshift.io/host.generated: "true"
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: kitchensink-app
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  name: kitchensink
+  namespace: demo-5-test
+spec:
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: kitchensink
+    weight: 100
+  wildcardPolicy: None

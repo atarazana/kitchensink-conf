@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kitchensink-kustomized-helm
+  namespace: openshift-gitops
+  labels:
+    argocd-root-app: "true"
+spec:
+  generators:
+  - list:
+      elements:
+      - env: dev
+        ns: demo-7-dev
+        desc: "Demo Dev"
+      - env: test
+        ns: demo-7-test
+        desc: "Demo Test"
+  template:
+    metadata:
+      name: kitchensink-kustomized-helm-app-{{ env }}
+      namespace: openshift-gitops
+      labels:
+        kitchensink-root-app: "true"
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    spec:
+      destination:
+        namespace: '{{ ns }}'
+        name: in-cluster
+      ignoreDifferences:
+      - group: apps.openshift.io
+        kind: DeploymentConfig
+        jqPathExpressions:
+          - .spec.template.spec.containers[].image
+      project: default
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        path: advanced/overlays/{{ env }}
+        repoURL: "https://github.com/atarazana/kitchensink-conf"
+        targetRevision: main
+        plugin:
+          env:
+            - name: DEBUG
+              value: 'false'
+            - name: BASE_NAMESPACE
+              value: '{{ ns }}'
+          name: kustomized-helm

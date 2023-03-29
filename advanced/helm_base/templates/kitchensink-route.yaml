@@ -1,0 +1,23 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+  annotations:
+    description: Route for application's https service.
+    openshift.io/host.generated: 'true'
+spec:
+  to:
+    kind: Service
+    name: kitchensink
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

@@ -1,0 +1,61 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: "{{ .Values.appName }}-{{ .Values.arcoSaerServiceName }}-s2i-bc"
+  namespace: {{ .Values.cicdNamespace }}
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    application: arco-saer-app
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "{{ .Values.appName }}-{{ .Values.arcoSaerServiceName }}:latest"
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: 'jboss-eap72-openshift:1.2'
+      env:
+        - name: GIT_SSL_NO_VERIFY
+          value: 'true'
+        - name: CUSTOM_INSTALL_DIRECTORIES
+          value: "extensions"
+        - name: ARTIFACT_DIR
+          value: "arco-saer-app/arco-saer-app-ear/target"
+        - name: MAVEN_MIRROR_URL
+          value: "{{ .Values.mavenMirror }}"
+        - name: MAVEN_ARGS
+          value: "-e -P openshift,linea-singleton,linea -DskipTests -Dcom.redhat.xpaas.repo.redhatga clean install"
+      incremental: true
+      forcePull: true
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: '{{ .Values.gitUrl }}/{{ .Values.gitUsername }}/arco-saer-cde-mig'
+      ref: develop
+    sourceSecret:
+      name: {{ .Values.gitPatSecretName }}
+  triggers:
+    - type: GitHub
+      github:
+        secret: uXTuuDo1
+    - type: Generic
+      generic:
+        secret: p6YuGBuM
+    - type: ImageChange
+      imageChange: {}
+    - type: ConfigChange
+  runPolicy: Serial
+

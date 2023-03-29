@@ -1,0 +1,119 @@
+kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  annotations:
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"kitchensink-db"}]'
+  name: kitchensink
+  labels:
+    app: eap72-basic-s2i
+    app.kubernetes.io/component: eap72-basic-s2i
+    app.kubernetes.io/instance: eap72-basic-s2i
+    app.kubernetes.io/part-of: kitchensink-app
+    app.openshift.io/runtime: jboss
+    application: kitchensink
+    template: eap72-basic-s2i
+    xpaas: 1.2.0
+spec:
+  strategy:
+    type: Recreate
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    activeDeadlineSeconds: 21600
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - kitchensink
+        from:
+          kind: ImageStreamTag
+          name: 'kitchensink:latest'
+    - type: ConfigChange
+  replicas: 1
+  revisionHistoryLimit: 10
+  test: false
+  selector:
+    deploymentConfig: kitchensink
+  template:
+    metadata:
+      name: kitchensink
+      creationTimestamp: null
+      labels:
+        application: kitchensink
+        deploymentConfig: kitchensink
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+    spec:
+      containers:
+        - resources:
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/readinessProbe.sh false
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          terminationMessagePath: /dev/termination-log
+          name: kitchensink
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-c'
+                - /opt/eap/bin/livenessProbe.sh
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          env:
+            - name: JGROUPS_PING_PROTOCOL
+              value: dns.DNS_PING
+            - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+              value: kitchensink-ping
+            - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+              value: '8888'
+            - name: MQ_CLUSTER_PASSWORD
+              value: qwerqwerqw
+            - name: MQ_QUEUES
+            - name: MQ_TOPICS
+            - name: JGROUPS_CLUSTER_PASSWORD
+              value: 24rqeqt34
+            - name: AUTO_DEPLOY_EXPLODED
+              value: 'false'
+            - name: DB_HOST
+              value: kitchensink-db
+            - name: DB_PORT
+              value: '5432'
+            - name: DB_NAME
+              value: kitchensink
+            - name: DB_USERNAME
+              value: luke
+            - name: DB_PASSWORD
+              value: secret
+          ports:
+            - name: jolokia
+              containerPort: 8778
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: ping
+              containerPort: 8888
+              protocol: TCP
+          imagePullPolicy: Always
+          terminationMessagePolicy: File
+          image: 'kitchensink:latest'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 75
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+
