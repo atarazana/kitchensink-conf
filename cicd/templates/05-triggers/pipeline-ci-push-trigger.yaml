@@ -1,0 +1,233 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-github-listener"
+  namespace: {{ .Values.cicdNamespace }}
+spec:
+  serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: github
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            # - name: secretRef
+            #   value: 
+            #     secretName: {{ .Values.gitPatSecretName }}
+            #     secretKey: {{ .Values.gitPatSecretKey }}
+            - name: eventTypes
+              value:
+                - push
+        # - ref:
+        #     name: cel
+        #     kind: ClusterInterceptor
+        #     apiVersion: triggers.tekton.dev
+        #   params:
+        #     # Triggers only if the PR was merged
+        #     - name: filter
+        #       value: "body.action in ['closed'] && body.pull_request.merged == true && body.pull_request.body.parseYAML().serviceName in ['{{ .Values.kitchensinkServiceName }}']"
+      bindings:
+        - kind: TriggerBinding
+          ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-github-trigger-binding"
+      template:
+        ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-trigger-template"
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-github-trigger-binding"
+  namespace: {{ .Values.cicdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  params:
+  - name: gitRepositoryUrl
+    value: $(body.repository.clone_url)
+  - name: gitRepository
+    value: $(body.repository.full_name)
+  - name: gitRevision
+    value: $(body.after)
+  - name: contentType
+    value: $(header.Content-Type)
+  - name: gitId
+    value: $(body.after)
+  - name: gitProvider
+    value: github
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitea-listener"
+  namespace: {{ .Values.cicdNamespace }}
+spec:
+  serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: github
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            # - name: secretRef
+            #   value: 
+            #     secretName: {{ .Values.gitPatSecretName }}
+            #     secretKey: {{ .Values.gitPatSecretKey }}
+            - name: eventTypes
+              value:
+                - push
+        # - github:
+        #     # secretRef:
+        #     #   secretName: github-secret
+        #     #   secretKey: secretToken
+        #     eventTypes:
+        #       - push
+        # - cel:
+        #     filter: "body.action in ['opened', 'synchronize', 'reopened']"
+      bindings:
+        - kind: TriggerBinding
+          ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitea-trigger-binding"
+      template:
+        ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-trigger-template"
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitea-trigger-binding"
+  namespace: {{ .Values.cicdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  params:
+  - name: gitRepositoryUrl
+    value: $(body.repository.clone_url)
+  - name: gitRepository
+    value: $(body.repository.full_name)
+  - name: gitRevision
+    value: $(body.after)
+  - name: contentType
+    value: $(header.Content-Type)
+  - name: gitId
+    value: $(body.after)
+  - name: gitProvider
+    value: gitea
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitlab-listener"
+  namespace: {{ .Values.cicdNamespace }}
+spec:
+  serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
+  triggers:
+    - name: gitlab-listener
+      interceptors:
+        - ref:
+            name: gitlab
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            # - name: secretRef
+            #   value: 
+            #     secretName: {{ .Values.gitPatSecretName }}
+            #     secretKey: {{ .Values.gitPatSecretKey }}
+            - name: eventTypes
+              value:
+                - push
+      bindings:
+        - kind: TriggerBinding
+          ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitlab-trigger-binding"
+      template:
+        ref: "{{ .Values.kitchensinkCiPushTriggerRootName }}-trigger-template"
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-gitlab-trigger-binding"
+  namespace: {{ .Values.cicdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  params:
+  - name: gitRepositoryUrl
+    value: $(body.repository.clone_url)
+  - name: gitRepository
+    value: $(body.repository.full_name)
+  - name: gitRevision
+    value: $(body.after)
+  - name: contentType
+    value: $(header.Content-Type)
+  - name: gitId
+    value: $(body.after)
+  - name: gitProvider
+    value: gitlab
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: "{{ .Values.kitchensinkCiPushTriggerRootName }}-trigger-template"
+  namespace: {{ .Values.cicdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  params:
+  - name: gitRepositoryUrl
+  - name: gitRepository
+  - name: gitRevision
+  - name: gitId
+  - name: gitProvider
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: "{{ .Values.kitchensinkCiPushTriggerRootName }}-plr-"
+      namespace: {{ .Values.cicdNamespace }}
+      labels:
+        app.kubernetes.io/instance: {{ .Values.kitchensinkServiceName }}
+        pipeline.openshift.io/runtime: quarkus
+        pipeline.openshift.io/type: knative
+        tekton.dev/pipeline: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+    spec:
+      params:
+        - name: APP_NAME
+          value: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}"
+        - name: GIT_PROVIDER
+          value: $(tt.params.gitProvider)
+        - name: GIT_REPO
+          value: $(tt.params.gitRepositoryUrl)
+        - name: GIT_REPO_NAME
+          value: $(tt.params.gitRepository)
+        - name: GIT_REVISION
+          value: $(tt.params.gitRevision)
+        - name: GIT_REPO_CONFIG
+          # value: "{{ .Values.gitUrl }}/{{ .Values.gitUsername }}/{{ .Values.baseRepoName }}"
+          value: "{{ .Values.baseRepoUrl }}"
+        - name: GIT_REVISION_CONFIG
+          value: "{{ .Values.gitRevision }}"
+        - name: IMAGE_NAME
+          value: >-
+            {{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}
+        - name: IMAGE_TAG
+          value: $(tt.params.gitRevision)
+        - name: PATH_CONTEXT
+          value: .
+        - name: QUARKUS_PROFILE
+          value: prod
+        - name: DB_HOST
+          value: "{{ .Values.kitchensinkServiceName }}-database"
+        - name: REVISION_NAME
+          value: v1
+      pipelineRef:
+        name: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+      serviceAccountName: {{ .Values.pipelinesServiceAccountName }}
+      timeout: 1h0m0s
+      workspaces:
+        - name: workspace-source
+          persistentVolumeClaim:
+            claimName: "{{ .Values.kitchensinkServiceName }}-source-pvc"
+        - name: workspace-cache
+          persistentVolumeClaim:
+            claimName: "{{ .Values.kitchensinkServiceName }}-cache-pvc"
+

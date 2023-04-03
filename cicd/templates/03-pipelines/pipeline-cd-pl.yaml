@@ -1,0 +1,158 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: {{ .Values.kitchensinkContinuosDeliveryPipeline }}
+  namespace: {{ .Values.cicdNamespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Values.kitchensinkServiceName }}
+    pipeline.openshift.io/runtime: jboss
+    pipeline.openshift.io/type: openshift
+spec:
+  params:
+    - name: APP_NAME
+      type: string
+      default: {{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}
+    - name: GIT_PROVIDER
+      type: string
+    - name: GIT_REPO_CONFIG
+      type: string
+    - name: GIT_REVISION_CONFIG
+      type: string
+      default: main
+    - name: IMAGE_DIGEST_CLEAN
+      type: string
+    - name: COUNT
+      type: string
+    - name: OVERLAY
+      type: string
+    - name: NEXT_OVERLAY
+      type: string
+    - name: TWIN_OVERLAY_SUFFIX
+      type: string
+      default: "cloud"
+    - name: GIT_SSL_VERIFY
+      type: string
+      default: '{{ .Values.gitSslVerify }}'
+  tasks:
+    - name: argocd-sync
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)-root-app-$(params.OVERLAY)
+        - name: SUB_OVERLAYS_TO_UPDATE
+          value: {{ .Values.kitchensinkSubOverlays | lower | quote }}
+        - name: WAIT_FOR_HEALTH
+          value: 'FALSE' # CVA switch on in production
+      taskRef:
+        kind: ClusterTask
+        name: argocd-sync
+    - name: fetch-config-repository
+      params:
+        - name: url
+          value: $(params.GIT_REPO_CONFIG)
+        - name: revision
+          value: $(params.GIT_REVISION_CONFIG)
+        - name: deleteExisting
+          value: 'true'
+        - name: sslVerify
+          value: $(params.GIT_SSL_VERIFY)
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace-source
+    - name: update-image
+      when:
+        - input: "$(params.NEXT_OVERLAY)"
+          operator: in
+          values: [{{ .Values.overlays }}]
+      params:
+        - name: OVERLAYS_PATH
+          value: "{{ .Values.kitchensinkOverlayPath }}"
+        - name: SUB_OVERLAYS_TO_UPDATE
+          value: {{ quote .Values.kitchensinkSubOverlays }}
+        - name: OVERLAY
+          value: "$(params.NEXT_OVERLAY)"
+        - name: SELECT_EXPRESSION
+          value: "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
+        - name: NEW_VALUE
+          value: "$(params.IMAGE_DIGEST_CLEAN)"
+        - name: SELECT_EXPRESSIONS
+          value: 
+            - "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
+            - "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newName"
+        - name: NEW_VALUES
+          value: 
+            - "$(params.IMAGE_DIGEST_CLEAN)"
+            - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
+      runAfter:
+        - argocd-sync
+        - fetch-config-repository
+      taskRef:
+        kind: ClusterTask
+        name: yq-eval-in-place
+      workspaces:
+        - name: source
+          workspace: workspace-source
+    - name: github-pr-create
+      when:
+        - input: "$(params.NEXT_OVERLAY)"
+          operator: in
+          values: [{{ .Values.overlays }}]
+        - input: "$(params.GIT_PROVIDER)"
+          operator: in
+          values: ['github']
+      params:
+        - name: PR_TITLE
+          value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlay '$(params.NEXT_OVERLAY)' with new image"
+        - name: PR_BODY
+          value: |
+            command: UPDATE_IMAGE
+            serviceName: {{ .Values.kitchensinkServiceName }}
+            count: $(params.COUNT)
+            overlay: $(params.NEXT_OVERLAY)
+            kustomizationPath: {{ .Values.kitchensinkOverlayPath }}/$(params.NEXT_OVERLAY)/*/kustomization.yml
+            imageDigestClean: $(params.IMAGE_DIGEST_CLEAN)
+            pipelineName: {{ .Values.kitchensinkContinuosDeliveryPipeline }}
+        - name: PAT_SECRET_NAME
+          value: {{ .Values.gitPatSecretName }}
+        - name: PAT_SECRET_KEY
+          value: {{ .Values.gitPatSecretKey }}
+      runAfter:
+        - update-image
+      taskRef:
+        kind: ClusterTask
+        name: github-pr-create
+      workspaces:
+        - name: source
+          workspace: workspace-source
+    - name: gitea-pr-create
+      when:
+        - input: "$(params.NEXT_OVERLAY)"
+          operator: in
+          values: [{{ .Values.overlays }}]
+        - input: "$(params.GIT_PROVIDER)"
+          operator: in
+          values: ['gitea']
+      params:
+        # PR Title describes the change and the overlay where it happens
+        - name: PR_TITLE
+          value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlay '$(params.NEXT_OVERLAY)' with new image"
+        # PR Body is a YAML with information for the next pipelines (stages)
+        - name: PR_BODY
+          value: |
+            command: UPDATE_IMAGE\nserviceName: {{ .Values.kitchensinkServiceName }}\ncount: $(params.COUNT)\noverlay: $(params.NEXT_OVERLAY)\nkustomizationPath: {{ .Values.kitchensinkOverlayPath }}/$(params.NEXT_OVERLAY)/*/kustomization.yml\nimageDigestClean: $(params.IMAGE_DIGEST_CLEAN)\npipelineName: {{ .Values.kitchensinkContinuosDeliveryPipeline }}
+        - name: PAT_SECRET_NAME
+          value: {{ .Values.gitPatSecretName }}
+        - name: PAT_SECRET_KEY
+          value: {{ .Values.gitPatSecretKey }}
+      runAfter:
+        - update-image
+      taskRef:
+        kind: ClusterTask
+        name: gitea-pr-create
+      workspaces:
+        - name: source
+          workspace: workspace-source
+  workspaces:
+    - name: workspace-source
