@@ -70,10 +70,6 @@ spec:
             exit 1
         fi
 
-        #echo "SELECT_EXPRESSION=\"$(params.SELECT_EXPRESSION)\""
-
-        echo "NEW_VALUE=$(params.NEW_VALUE)"
-
         FILE_TO_UPDATE="$(params.OVERLAYS_PATH)/$(params.OVERLAY)/$(params.FILE_NAME)"
         echo "FILE_TO_UPDATE=${FILE_TO_UPDATE}"
 
