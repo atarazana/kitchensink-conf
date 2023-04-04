@@ -14,9 +14,6 @@ spec:
   description: >-
     These Task evaluates an expression and make changes in-place.
   params:
-    # - description: File to update in-place, it should be a YAML file
-    #   name: FILE_TO_UPDATE
-    #   type: string
     - description: Overlays path
       name: OVERLAYS_PATH
       type: string
@@ -31,15 +28,9 @@ spec:
       name: TWIN_OVERLAY_SUFFIX
       type: string
       default: "cloud"
-    # - description: Expression to select the node to update
-    #   name: SELECT_EXPRESSION
-    #   type: string
     - description: Expression to select the node to update
       name: SELECT_EXPRESSIONS
       type: array
-    # - description: New 'string' value.
-    #   name: NEW_VALUE
-    #   type: string
     - description: New array of values.
       name: NEW_VALUES
       type: array
@@ -85,7 +76,6 @@ spec:
         cat ${FILE_TO_UPDATE}
 
         # Update target with new value
-        #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE}
         let END=${NUM_ARGS}/2
         for i in $(seq 1 ${END}); 
         do
@@ -112,7 +102,6 @@ spec:
         if [ -f ${FILE_TO_UPDATE_TWIN} ]; then
           echo "======== UPDATING TWIN OVERLAY ========"
           # Update target with new value
-          #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE_TWIN}
           for i in $(seq 1 ${END}); 
           do
               let j=${i}
