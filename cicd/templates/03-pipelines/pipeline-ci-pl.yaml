@@ -75,33 +75,42 @@ spec:
     #       workspace: workspace-source
     #     - name: cache
     #       workspace: workspace-cache
-    - name: build
+    - name: start-build
       params:
-        - name: IMAGE
-          value: "$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
-        - name: TLSVERIFY
-          value: 'false'
-        - name: PATH_CONTEXT
-          value: $(params.PATH_CONTEXT)
-        - name: DOCKERFILE_PATH
-          value: './Containerfile'
-        - name: ARTIFACT_DIR
-          value: 'kitchensink-app/kitchensink-app-ear/target'
-        - name: MAVEN_ARGS
-          value: '-e -P openshift,linea-singleton,linea -DskipTests -Dcom.redhat.xpaas.repo.redhatga clean install'
-        - name: MAVEN_MIRROR_URL
-          value: "{{ .Values.mavenMirror }}"
-        - name: CUSTOM_INSTALL_DIRECTORIES
-          value: 'extensions'
+        - name: SCRIPT
+          value: oc start-build {{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-bc --wait
       runAfter:
-        # - package
         - fetch-repository
       taskRef:
         kind: ClusterTask
-        name: buildah-custom-build
-      workspaces:
-        - name: source
-          workspace: workspace-source
+        name: openshift-client
+    # - name: build
+    #   params:
+    #     - name: IMAGE
+    #       value: "$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
+    #     - name: TLSVERIFY
+    #       value: 'false'
+    #     - name: PATH_CONTEXT
+    #       value: $(params.PATH_CONTEXT)
+    #     - name: DOCKERFILE_PATH
+    #       value: './Containerfile'
+    #     - name: ARTIFACT_DIR
+    #       value: 'kitchensink-app/kitchensink-app-ear/target'
+    #     - name: MAVEN_ARGS
+    #       value: '-e -P openshift,linea-singleton,linea -DskipTests -Dcom.redhat.xpaas.repo.redhatga clean install'
+    #     - name: MAVEN_MIRROR_URL
+    #       value: "{{ .Values.mavenMirror }}"
+    #     - name: CUSTOM_INSTALL_DIRECTORIES
+    #       value: 'extensions'
+    #   runAfter:
+    #     # - package
+    #     - fetch-repository
+    #   taskRef:
+    #     kind: ClusterTask
+    #     name: buildah-custom-build
+    #   workspaces:
+    #     - name: source
+    #       workspace: workspace-source
     - name: fetch-config-repository
       params:
         - name: url
