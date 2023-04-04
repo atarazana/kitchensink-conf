@@ -148,64 +148,64 @@ spec:
       workspaces:
         - name: source
           workspace: workspace-source
-    # - name: github-pr-create
-    #   when:
-    #     - input: "$(params.GIT_PROVIDER)"
-    #       operator: in
-    #       values: ['github']
-    #   params:
-    #     # PR Title describes the change and the overlay where it happens
-    #     - name: PR_TITLE
-    #       value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlay 'dev' with new image"
-    #     # PR Body is a YAML with information for the next pipelines (stages)
-    #     - name: PR_BODY
-    #       value: |
-    #         command: UPDATE_IMAGE
-    #         serviceName: {{ .Values.kitchensinkServiceName }}
-    #         count: 0
-    #         overlay: dev
-    #         kustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml
-    #         imageDigestClean: $(tasks.build.results.IMAGE_DIGEST_CLEAN)
-    #         pipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
-    #     - name: PAT_SECRET_NAME
-    #       value: {{ .Values.gitPatSecretName }}
-    #     - name: PAT_SECRET_KEY
-    #       value: {{ .Values.gitPatSecretKey }}
-    #   runAfter:
-    #     - update-image
-    #   taskRef:
-    #     kind: ClusterTask
-    #     name: github-pr-create
-    #   workspaces:
-    #     - name: source
-    #       workspace: workspace-source
-    # - name: gitea-pr-create
-    #   when:
-    #     - input: "$(params.GIT_PROVIDER)"
-    #       operator: in
-    #       values: ['gitea']
-    #   params:
-    #     - name: PR_BASE
-    #       value: $(params.GIT_REVISION_CONFIG)
-    #     # PR Title describes the change and the overlay where it happens
-    #     - name: PR_TITLE
-    #       value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlays 'dev/*' with new image"
-    #     # PR Body is a YAML with information for the next pipelines (stages)
-    #     - name: PR_BODY
-    #       value: |
-    #         command: UPDATE_IMAGE\nserviceName: {{ .Values.kitchensinkServiceName }}\ncount: 0\noverlay: dev\nkustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml\nimageDigestClean: $(tasks.build.results.IMAGE_DIGEST_CLEAN)\npipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
-    #     - name: PAT_SECRET_NAME
-    #       value: {{ .Values.gitPatSecretName }}
-    #     - name: PAT_SECRET_KEY
-    #       value: {{ .Values.gitPatSecretKey }}
-    #   runAfter:
-    #     - update-image
-    #   taskRef:
-    #     kind: ClusterTask
-    #     name: gitea-pr-create
-    #   workspaces:
-    #     - name: source
-    #       workspace: workspace-source
+    - name: github-pr-create
+      when:
+        - input: "$(params.GIT_PROVIDER)"
+          operator: in
+          values: ['github']
+      params:
+        # PR Title describes the change and the overlay where it happens
+        - name: PR_TITLE
+          value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlay 'dev' with new image"
+        # PR Body is a YAML with information for the next pipelines (stages)
+        - name: PR_BODY
+          value: |
+            command: UPDATE_IMAGE
+            serviceName: {{ .Values.kitchensinkServiceName }}
+            count: 0
+            overlay: dev
+            kustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml
+            imageDigestClean: $(tasks.build.results.IMAGE_DIGEST_CLEAN)
+            pipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+        - name: PAT_SECRET_NAME
+          value: {{ .Values.gitPatSecretName }}
+        - name: PAT_SECRET_KEY
+          value: {{ .Values.gitPatSecretKey }}
+      runAfter:
+        - update-image
+      taskRef:
+        kind: ClusterTask
+        name: github-pr-create
+      workspaces:
+        - name: source
+          workspace: workspace-source
+    - name: gitea-pr-create
+      when:
+        - input: "$(params.GIT_PROVIDER)"
+          operator: in
+          values: ['gitea']
+      params:
+        - name: PR_BASE
+          value: $(params.GIT_REVISION_CONFIG)
+        # PR Title describes the change and the overlay where it happens
+        - name: PR_TITLE
+          value: "Updating '{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}' image for overlays 'dev/*' with new image"
+        # PR Body is a YAML with information for the next pipelines (stages)
+        - name: PR_BODY
+          value: |
+            command: UPDATE_IMAGE\nserviceName: {{ .Values.kitchensinkServiceName }}\ncount: 0\noverlay: dev\nkustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml\nimageDigestClean: $(tasks.build.results.IMAGE_DIGEST_CLEAN)\npipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+        - name: PAT_SECRET_NAME
+          value: {{ .Values.gitPatSecretName }}
+        - name: PAT_SECRET_KEY
+          value: {{ .Values.gitPatSecretKey }}
+      runAfter:
+        - update-image
+      taskRef:
+        kind: ClusterTask
+        name: gitea-pr-create
+      workspaces:
+        - name: source
+          workspace: workspace-source
   workspaces:
     - name: workspace-source
     - name: workspace-cache
