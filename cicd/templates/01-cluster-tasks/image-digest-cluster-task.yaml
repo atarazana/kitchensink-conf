@@ -14,26 +14,12 @@ spec:
   description: >-
     These Task finds an image and returns the digest.
   params:
-    - description: Overlays path
-      name: OVERLAYS_PATH
+    - description: Image Tag Name
+      name: IMAGE_TAG_NAME
       type: string
-    - description: Overlays where the file to be updated is
-      name: OVERLAY
+    - description: Image Tag Namespace
+      name: IMAGE_TAG_NAMESPACE
       type: string
-    - description: File to update in-place, it should be a YAML file
-      name: FILE_NAME
-      type: string
-      default: "kustomization.yml"
-    - description: Overlay suffix if twin overlay
-      name: TWIN_OVERLAY_SUFFIX
-      type: string
-      default: "cloud"
-    - description: Expression to select the node to update
-      name: SELECT_EXPRESSIONS
-      type: array
-    - description: New array of values.
-      name: NEW_VALUES
-      type: array
     - default: quay.io/atarazana/jq:0.0.2
       description: the image used where the yq binary is
       name: TASK_IMAGE
@@ -54,7 +40,7 @@ spec:
       script: |
         #!/bin/sh
 
-        IMAGE_DIGEST = oc get imagetags $(params.IMAGE_TAG_NAME) | jq -r .image.metadata.name
+        IMAGE_DIGEST = oc get imagetags $(params.IMAGE_TAG_NAME) -n $(params.IMAGE_TAG_NAMESPACE) | jq -r .image.metadata.name
         echo "IMAGE_DIGEST: ${IMAGE_DIGEST}"
         NEW_IMAGE_TAG = ("${IMAGE_DIGEST}" =~ /.*\:(.*)/)[0][1]
         echo "NEW_IMAGE_TAG: ${NEW_IMAGE_TAG}"
