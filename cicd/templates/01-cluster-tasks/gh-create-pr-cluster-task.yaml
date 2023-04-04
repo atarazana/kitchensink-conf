@@ -5,7 +5,7 @@ metadata:
     tekton.dev/displayName: GitHub create pull request cluster task
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'pr, github'
-  name: github-pr-create
+  name: github-pr-create-beta
 
   labels:
     app.kubernetes.io/version: '0.1'

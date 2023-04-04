@@ -126,16 +126,10 @@ spec:
           workspace: workspace-source
     - name: update-image
       params:
-        # - name: FILE_TO_UPDATE
-        #   value: "{{ .Values.kitchensinkOverlayPath }}/dev/kustomization.yml"
         - name: OVERLAYS_PATH
           value: "{{ .Values.kitchensinkOverlayPath }}"
         - name: OVERLAY
           value: "dev"
-        # - name: SELECT_EXPRESSION
-        #   value: "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
-        # - name: NEW_VALUE
-        #   value: "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
         - name: SELECT_EXPRESSIONS
           value: 
             - "(.images.[] | select(.name == \"*{{ .Values.kitchensinkServiceName }}*\")).newTag"
