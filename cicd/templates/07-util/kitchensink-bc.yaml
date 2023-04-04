@@ -21,7 +21,7 @@ spec:
       from:
         kind: ImageStreamTag
         namespace: openshift
-        name: '{{ .Values.jbossEapBuilderImage }}'
+        name: '{{ .Values.kitchensinkBuilderImage }}'
       env:
         - name: MAVEN_MIRROR_URL
         - name: MAVEN_ARGS_APPEND
