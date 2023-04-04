@@ -2,16 +2,16 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-bc"
+  name: "{{ .Values.kitchensinkServiceName }}-bc"
   namespace: "{{ .Values.cicdNamespace }}"
   labels:
-    app: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-app"
+    app: "{{ .Values.kitchensinkServiceName }}-app"
 spec:
   nodeSelector: null
   output:
     to:
       kind: ImageStreamTag
-      name: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}:latest"
+      name: "{{ .Values.kitchensinkServiceName }}:latest"
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5

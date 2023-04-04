@@ -1,7 +1,7 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-s2i-bc"
+  name: "{{ .Values.kitchensinkServiceName }}-s2i-bc"
   namespace: {{ .Values.cicdNamespace }}
   labels:
     app: eap72-basic-s2i
@@ -15,7 +15,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}:latest"
+      name: "{{ .Values.kitchensinkServiceName }}:latest"
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5

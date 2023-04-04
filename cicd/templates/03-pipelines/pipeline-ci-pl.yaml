@@ -11,7 +11,7 @@ spec:
   params:
     - name: APP_NAME
       type: string
-      default: {{ .Values.kitchensinkServiceName }}
+      default: "{{ .Values.kitchensinkServiceName }}"
     - name: GIT_PROVIDER
       type: string
     - name: GIT_REPO
@@ -26,6 +26,9 @@ spec:
     - name: GIT_REVISION_CONFIG
       type: string
       default: main
+    - name: BUILD_CONFIG_NAME
+      type: string
+      default: "{{ .Values.kitchensinkServiceName }}-bc"
     - name: IMAGE_NAME
       type: string
     - name: IMAGE_TAG
@@ -70,7 +73,7 @@ spec:
     - name: build
       params:
         - name: SCRIPT
-          value: oc start-build {{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-bc --wait
+          value: oc start-build $(params.BUILD_CONFIG_NAME) --wait
       runAfter:
         - fetch-repository
       taskRef:
