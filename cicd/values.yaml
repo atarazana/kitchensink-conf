@@ -38,7 +38,7 @@ overlays: "dev,test"
 kitchensinkServiceName: kitchensink
 
 # Overlays relative path in the config repository
-kitchensinkOverlayPath: ./kitchensink-deployment/overlays
+kitchensinkOverlayPath: ./advanced/overlays
 
 # Sub Overlays names separated by blank
 kitchensinkSubOverlays: 'L01 L02'
