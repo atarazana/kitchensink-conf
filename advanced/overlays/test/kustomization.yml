@@ -16,10 +16,10 @@ secretGenerator:
       - DB_USERNAME=luke
       - DB_PASSWORD=secret
       - DB_NAME=kitchensink
-# images:
-#   - name: gramola-events:0.0.0
-#     newName: quay.io/atarazana/gramola-events@sha256
-#     newTag: d833e14ed4751911ae153a80f56820ce04880aa6d8dbdc73f704f2303c365ad4
+images:
+  - name: image-registry.openshift-image-registry.svc:5000/demo-7-test/kitchensink:latest
+    newName: image-registry.openshift-image-registry.svc:5000/demo-7-test/kitchensink
+    newTag: latest
 patchesJson6902:
   - target:
       group: apps

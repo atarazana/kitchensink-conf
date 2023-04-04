@@ -20,9 +20,6 @@ spec:
     - description: Overlays path
       name: OVERLAYS_PATH
       type: string
-    - description: Sub Overlays to update .../{overlay}/{sub_overlay}
-      name: SUB_OVERLAYS_TO_UPDATE
-      type: string
     - description: Overlays where the file to be updated is
       name: OVERLAY
       type: string
@@ -34,15 +31,15 @@ spec:
       name: TWIN_OVERLAY_SUFFIX
       type: string
       default: "cloud"
-    - description: Expression to select the node to update
-      name: SELECT_EXPRESSION
-      type: string
+    # - description: Expression to select the node to update
+    #   name: SELECT_EXPRESSION
+    #   type: string
     - description: Expression to select the node to update
       name: SELECT_EXPRESSIONS
       type: array
-    - description: New 'string' value.
-      name: NEW_VALUE
-      type: string
+    # - description: New 'string' value.
+    #   name: NEW_VALUE
+    #   type: string
     - description: New array of values.
       name: NEW_VALUES
       type: array
@@ -77,28 +74,49 @@ spec:
 
         echo "NEW_VALUE=$(params.NEW_VALUE)"
 
-        SUB_OVERLAYS_TO_UPDATE="$(params.SUB_OVERLAYS_TO_UPDATE)"
-        echo "SUB_OVERLAYS_TO_UPDATE=${SUB_OVERLAYS_TO_UPDATE}"
+        FILE_TO_UPDATE="$(params.OVERLAYS_PATH)/$(params.OVERLAY)/$(params.FILE_NAME)"
+        echo "FILE_TO_UPDATE=${FILE_TO_UPDATE}"
 
-        for SUB_OVERLAY in ${SUB_OVERLAYS_TO_UPDATE}
+        if [ ! -f ${FILE_TO_UPDATE} ]; then
+          echo "======== ERROR ========"
+          echo "File not found, aborting"
+          ls -ltrh
+          exit 1;
+        fi;
+
+        echo "======== BEFORE CHANGES ========"
+
+        cat ${FILE_TO_UPDATE}
+
+        # Update target with new value
+        #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE}
+        let END=${NUM_ARGS}/2
+        for i in $(seq 1 ${END}); 
         do
-          FILE_TO_UPDATE="$(params.OVERLAYS_PATH)/$(params.OVERLAY)/${SUB_OVERLAY}/$(params.FILE_NAME)"
-          echo "FILE_TO_UPDATE=${FILE_TO_UPDATE}"
+            let j=${i}
+            SELECT_EXPRESSION=${!j}
+            let k=${j}+${END}
+            NEW_VALUE=${!k}
 
-          if [ ! -f ${FILE_TO_UPDATE} ]; then
-            echo "======== ERROR ========"
-            echo "File not found, aborting"
-            ls -ltrh
-            exit 1;
-          fi;
+            # Update target with new value
+            echo "SELECT_EXPRESSION=${SELECT_EXPRESSION} NEW_VALUE=${NEW_VALUE}"
+            YQ_SENTENCE=$(printf "yq -i eval \'${SELECT_EXPRESSION} |= \"${NEW_VALUE}\"\' $FILE_TO_UPDATE")
+            echo "YQ_SENTENCE=${YQ_SENTENCE}"
+            #yq -i eval ''"${SELECT_EXPRESSION}"' |= strenv(NEW_VALUE)' $FILE_TO_UPDATE
+            eval ${YQ_SENTENCE}
+        done
+        
+        echo "======== AFTER CHANGES ========"
+        git diff ${FILE_TO_UPDATE}
 
-          echo "======== BEFORE CHANGES ========"
+        # If twin env
+        FILE_TO_UPDATE_TWIN="$(params.OVERLAYS_PATH)/$(params.OVERLAY)-$(params.TWIN_OVERLAY_SUFFIX)/$(params.FILE_NAME)"
+        echo "FILE_TO_UPDATE=${FILE_TO_UPDATE}"
 
-          cat ${FILE_TO_UPDATE}
-
+        if [ -f ${FILE_TO_UPDATE_TWIN} ]; then
+          echo "======== UPDATING TWIN OVERLAY ========"
           # Update target with new value
-          #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE}
-          let END=${NUM_ARGS}/2
+          #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE_TWIN}
           for i in $(seq 1 ${END}); 
           do
               let j=${i}
@@ -107,48 +125,18 @@ spec:
               NEW_VALUE=${!k}
 
               # Update target with new value
+              #echo "SELECT_EXPRESSION=${SELECT_EXPRESSION} NEW_VALUE=${NEW_VALUE}"
+              #yq -i eval ''"${SELECT_EXPRESSION}"' |= strenv(NEW_VALUE)' ${FILE_TO_UPDATE_TWIN}
+              # Update target with new value
               echo "SELECT_EXPRESSION=${SELECT_EXPRESSION} NEW_VALUE=${NEW_VALUE}"
-              YQ_SENTENCE=$(printf "yq -i eval \'${SELECT_EXPRESSION} |= \"${NEW_VALUE}\"\' $FILE_TO_UPDATE")
+              YQ_SENTENCE=$(printf "yq -i eval \'${SELECT_EXPRESSION} |= \"${NEW_VALUE}\"\' $FILE_TO_UPDATE_TWIN")
               echo "YQ_SENTENCE=${YQ_SENTENCE}"
               #yq -i eval ''"${SELECT_EXPRESSION}"' |= strenv(NEW_VALUE)' $FILE_TO_UPDATE
               eval ${YQ_SENTENCE}
           done
-          
-          echo "======== AFTER CHANGES ========"
-          git diff ${FILE_TO_UPDATE}
-        done
-
-        # If twin env
-        for SUB_OVERLAY in ${SUB_OVERLAYS_TO_UPDATE}
-        do
-          FILE_TO_UPDATE_TWIN="$(params.OVERLAYS_PATH)/$(params.OVERLAY)-$(params.TWIN_OVERLAY_SUFFIX)/${SUB_OVERLAY}/$(params.FILE_NAME)"
-          echo "FILE_TO_UPDATE=${FILE_TO_UPDATE}"
-
-          if [ -f ${FILE_TO_UPDATE_TWIN} ]; then
-            echo "======== UPDATING TWIN OVERLAY ========"
-            # Update target with new value
-            #yq -i eval '$(params.SELECT_EXPRESSION) |= "$(params.NEW_VALUE)"' ${FILE_TO_UPDATE_TWIN}
-            for i in $(seq 1 ${END}); 
-            do
-                let j=${i}
-                SELECT_EXPRESSION=${!j}
-                let k=${j}+${END}
-                NEW_VALUE=${!k}
-
-                # Update target with new value
-                #echo "SELECT_EXPRESSION=${SELECT_EXPRESSION} NEW_VALUE=${NEW_VALUE}"
-                #yq -i eval ''"${SELECT_EXPRESSION}"' |= strenv(NEW_VALUE)' ${FILE_TO_UPDATE_TWIN}
-                # Update target with new value
-                echo "SELECT_EXPRESSION=${SELECT_EXPRESSION} NEW_VALUE=${NEW_VALUE}"
-                YQ_SENTENCE=$(printf "yq -i eval \'${SELECT_EXPRESSION} |= \"${NEW_VALUE}\"\' $FILE_TO_UPDATE_TWIN")
-                echo "YQ_SENTENCE=${YQ_SENTENCE}"
-                #yq -i eval ''"${SELECT_EXPRESSION}"' |= strenv(NEW_VALUE)' $FILE_TO_UPDATE
-                eval ${YQ_SENTENCE}
-            done
-          else
-            echo "TWIN OVERLAY NOT FOUND!"
-          fi;
-        done
+        else
+          echo "TWIN OVERLAY NOT FOUND!"
+        fi;
 
         #echo -n "true" > $(results.SUCCESS)
   workspaces:

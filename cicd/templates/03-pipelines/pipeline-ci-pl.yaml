@@ -106,54 +106,54 @@ spec:
     #   workspaces:
     #     - name: source
     #       workspace: workspace-source
-    # - name: fetch-config-repository
-    #   params:
-    #     - name: url
-    #       value: $(params.GIT_REPO_CONFIG)
-    #     - name: revision
-    #       value: $(params.GIT_REVISION_CONFIG)
-    #     - name: deleteExisting
-    #       value: 'true'
-    #     - name: sslVerify
-    #       value: $(params.GIT_SSL_VERIFY)
-    #   runAfter:
-    #     - build
-    #   taskRef:
-    #     kind: ClusterTask
-    #     name: git-clone
-    #   workspaces:
-    #     - name: output
-    #       workspace: workspace-source
-    # - name: update-image
-    #   params:
-    #     # - name: FILE_TO_UPDATE
-    #     #   value: "{{ .Values.kitchensinkOverlayPath }}/dev/kustomization.yml"
-    #     - name: OVERLAYS_PATH
-    #       value: "{{ .Values.kitchensinkOverlayPath }}"
-    #     - name: SUB_OVERLAYS_TO_UPDATE
-    #       value: {{ quote .Values.kitchensinkSubOverlays }}
-    #     - name: OVERLAY
-    #       value: "dev"
-    #     - name: SELECT_EXPRESSION
-    #       value: "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
-    #     - name: NEW_VALUE
-    #       value: "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
-    #     - name: SELECT_EXPRESSIONS
-    #       value: 
-    #         - "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
-    #         - "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newName"
-    #     - name: NEW_VALUES
-    #       value: 
-    #         - "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
-    #         - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
-    #   runAfter:
-    #     - fetch-config-repository
-    #   taskRef:
-    #     kind: ClusterTask
-    #     name: yq-eval-in-place
-    #   workspaces:
-    #     - name: source
-    #       workspace: workspace-source
+    - name: fetch-config-repository
+      params:
+        - name: url
+          value: $(params.GIT_REPO_CONFIG)
+        - name: revision
+          value: $(params.GIT_REVISION_CONFIG)
+        - name: deleteExisting
+          value: 'true'
+        - name: sslVerify
+          value: $(params.GIT_SSL_VERIFY)
+      runAfter:
+        - build
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace-source
+    - name: update-image
+      params:
+        # - name: FILE_TO_UPDATE
+        #   value: "{{ .Values.kitchensinkOverlayPath }}/dev/kustomization.yml"
+        - name: OVERLAYS_PATH
+          value: "{{ .Values.kitchensinkOverlayPath }}"
+        - name: OVERLAY
+          value: "dev"
+        # - name: SELECT_EXPRESSION
+        #   value: "(.images.[] | select(.name == \"{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}*\")).newTag"
+        # - name: NEW_VALUE
+        #   value: "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
+        - name: SELECT_EXPRESSIONS
+          value: 
+            - "(.images.[] | select(.name == \"*{{ .Values.kitchensinkServiceName }}*\")).newTag"
+            - "(.images.[] | select(.name == \"*{{ .Values.kitchensinkServiceName }}*\")).newName"
+        - name: NEW_VALUES
+          value: 
+            # - "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
+            # - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
+            - "latest"
+            - "image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink"
+      runAfter:
+        - fetch-config-repository
+      taskRef:
+        kind: ClusterTask
+        name: yq-eval-in-place
+      workspaces:
+        - name: source
+          workspace: workspace-source
     # - name: github-pr-create
     #   when:
     #     - input: "$(params.GIT_PROVIDER)"
