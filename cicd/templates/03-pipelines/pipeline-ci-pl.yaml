@@ -75,7 +75,7 @@ spec:
     #       workspace: workspace-source
     #     - name: cache
     #       workspace: workspace-cache
-    - name: start-build
+    - name: build
       params:
         - name: SCRIPT
           value: oc start-build {{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}-bc --wait
