@@ -38,7 +38,7 @@ We need some sensitive data, your PAT for the source repo:
 ```sh
 export GIT_HOST=$(oc get route/repository -n gitea-system -o jsonpath='{.spec.host}')
 
-export GIT_PAT=$(curl -k -s -X 'POST' -H "Content-Type: application/json"  -k -d '{"name":"cicd'"${RANDOM}"'"}' -u ${GIT_USERNAME}:${GIT_PASSWORD} https://${GIT_HOST}/api/v1/users/${GIT_USERNAME}/tokens | jq -r .sha1)
+export GIT_PAT=$(curl -k -s -X 'POST' -H "Content-Type: application/json"  -k -d '{"name":"cicd'"${RANDOM}"'", "scopes":["repo"]}' -u ${GIT_USERNAME}:${GIT_PASSWORD} https://${GIT_HOST}/api/v1/users/${GIT_USERNAME}/tokens | jq -r .sha1)
 
 echo "GIT_PAT=${GIT_PAT}"
 ```
@@ -208,7 +208,7 @@ spec:
         kind: DeploymentConfig
         jqPathExpressions:
           - .spec.template.spec.containers[].image
-      project: default
+      project: kitchensink-project-{{ env }}
       syncPolicy:
         automated:
           selfHeal: true
@@ -305,9 +305,9 @@ Others, use the following command to get the server and point a browser to it us
 oc get route/myregistry-quay -n quay-system -o jsonpath='{.spec.host}'
 ```
 
-Log in with user `gramola` and password `openshift`
+Log in with user `demos` and password `openshift`
 
-The create a robot account named `cicd` and create two repositories `gramola-events` and `gramola-gateway`.
+The create a robot account named `cicd` and create repository `demos`.
 
 # Tekton Pipelines
 
@@ -366,9 +366,63 @@ spec:
             - name: containerRegistryOrg
               value: ${CONTAINER_REGISTRY_ORG}
             - name: gitSslVerify
-              value: true
+              value: "true"
         path: cicd
         repoURL: "https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}"
+        targetRevision: ${GIT_REVISION}
+EOF
+```
+
+If github is used...
+
+```sh
+cat <<EOF | kubectl apply -n openshift-gitops -f -
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kitchensink-cicd
+  namespace: openshift-gitops
+  labels:
+    argocd-root-app: "true"
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: in-cluster
+        ns: openshift-gitops
+  template:
+    metadata:
+      name: kitchensink-cicd
+      namespace: openshift-gitops
+      labels:
+        argocd-root-app-cloud: "true"
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    spec:
+      destination:
+        namespace: '{{ ns }}'
+        name: '{{ cluster }}'
+      project: default
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        helm:
+          parameters:
+            - name: baseRepoUrl
+              value: "${GIT_CONF_URL_SRC}"
+            - name: username
+              value: "${GIT_USERNAME_SRC}"
+            - name: gitRevision
+              value: "${GIT_REVISION}"
+            - name: containerRegistryServer
+              value: ${CONTAINER_REGISTRY_SERVER}
+            - name: containerRegistryOrg
+              value: ${CONTAINER_REGISTRY_ORG}
+            - name: gitSslVerify
+              value: "true"
+        path: cicd
+        repoURL: "${GIT_CONF_URL_SRC}"
         targetRevision: ${GIT_REVISION}
 EOF
 ```
@@ -395,6 +449,9 @@ Now please run this command, it will ask for the password of the robot account y
 
 ```sh
 echo "Enter password for ${CONTAINER_REGISTRY_USERNAME}: " && read -s CONTAINER_REGISTRY_PASSWORD
+```
+
+```sh
 echo "Password entered: ${CONTAINER_REGISTRY_PASSWORD}"
 ```
 
@@ -414,16 +471,16 @@ export CONTAINER_REGISTRY_SECRET_NAME=$(yq eval '.containerRegistrySecretName' .
 if [ -z "${CONTAINER_REGISTRY_USERNAME}" ] && [ -z "${CONTAINER_REGISTRY_PASSWORD}" ]; then
     echo "You should provide a value for CONTAINER_REGISTRY_USERNAME and CONTAINER_REGISTRY_PASSWORD"
 else
-oc create -n gramola-dev secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
+oc create -n demo-7-dev secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
   --docker-server=https://${CONTAINER_REGISTRY_SERVER} \
   --docker-username=${CONTAINER_REGISTRY_USERNAME} \
   --docker-password=${CONTAINER_REGISTRY_PASSWORD}
-oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n gramola-dev
-oc create -n gramola-test secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
+oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n demo-7-dev
+oc create -n demo-7-test secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
   --docker-server=https://${CONTAINER_REGISTRY_SERVER} \
   --docker-username=${CONTAINER_REGISTRY_USERNAME} \
   --docker-password=${CONTAINER_REGISTRY_PASSWORD}
-oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n gramola-test
+oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n demo-7-test
 fi
 ```
 
@@ -439,11 +496,11 @@ export CONTAINER_REGISTRY_SECRET_NAME=$(yq eval '.containerRegistrySecretName' .
 if [ -z "${CONTAINER_REGISTRY_USERNAME}" ] && [ -z "${CONTAINER_REGISTRY_PASSWORD}" ]; then
     echo "You should provide a value for CONTAINER_REGISTRY_USERNAME and CONTAINER_REGISTRY_PASSWORD"
 else
-oc create -n gramola-test secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
+oc create -n demo-7-test secret docker-registry ${CONTAINER_REGISTRY_SECRET_NAME} \
   --docker-server=https://$CONTAINER_REGISTRY_SERVER \
   --docker-username=$CONTAINER_REGISTRY_USERNAME \
   --docker-password=$CONTAINER_REGISTRY_PASSWORD
-oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n gramola-test
+oc secrets link default ${CONTAINER_REGISTRY_SECRET_NAME} --for=pull -n demo-7-test
 fi
 
 oc login -u opentlc-mgr -p r3dh4t1! --server=https://api.cluster-rhpr5.rhpr5.sandbox2409.opentlc.com:6443
@@ -454,7 +511,7 @@ oc login -u opentlc-mgr -p r3dh4t1! --server=https://api.cluster-rhpr5.rhpr5.san
 Run the next command to create the webhooks for CI part of the Tekton pipelines.
 
 ```sh
-KITCHENSINK_CI_EL_LISTENER_HOST=$(oc get route/el-events-ci-pl-push-gitea-listener -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
+KITCHENSINK_CI_EL_LISTENER_HOST=$(oc get route/el-kitchensink-ci-pl-push-gitea-listener -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
 
 curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${KITCHENSINK_REPO_NAME}/hooks" \
   -H "accept: application/json" \
@@ -472,31 +529,12 @@ curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${KITCHENSIN
   ],
   "type": "gitea"
 }'
-
-GATEWAY_CI_EL_LISTENER_HOST=$(oc get route/el-gateway-ci-pl-push-gitea-listener -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
-
-curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${GATEWAY_REPO_NAME}/hooks" \
-  -H "accept: application/json" \
-  -H "Authorization: token ${GIT_PAT}" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "active": true,
-  "branch_filter": "*",
-  "config": {
-     "content_type": "json",
-     "url": "http://'"${GATEWAY_CI_EL_LISTENER_HOST}"'"
-  },
-  "events": [
-    "push" 
-  ],
-  "type": "gitea"
-}'
 ```
 
 And, run the next command to create the webhooks for CD part of the Tekton pipelines.
 
 ```sh
-KITCHENSINK_CD_EL_LISTENER_HOST=$(oc get route/el-events-cd-pl-pr-gitea-listener  -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
+KITCHENSINK_CD_EL_LISTENER_HOST=$(oc get route/el-kitchensink-cd-pl-pr-gitea-listener  -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
 
 curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${GIT_CONF_REPONAME}/hooks" \
   -H "accept: application/json" \
@@ -508,25 +546,6 @@ curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${GIT_CONF_R
   "config": {
      "content_type": "json",
      "url": "http://'"${KITCHENSINK_CD_EL_LISTENER_HOST}"'"
-  },
-  "events": [
-    "pull_request" 
-  ],
-  "type": "gitea"
-}'
-
-GATEWAY_CD_EL_LISTENER_HOST=$(oc get route/el-gateway-cd-pl-pr-gitea-listener  -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
-
-curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${GIT_CONF_REPONAME}/hooks" \
-  -H "accept: application/json" \
-  -H "Authorization: token ${GIT_PAT}" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "active": true,
-  "branch_filter": "*",
-  "config": {
-     "content_type": "json",
-     "url": "http://'"${GATEWAY_CD_EL_LISTENER_HOST}"'"
   },
   "events": [
     "pull_request" 

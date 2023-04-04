@@ -1,9 +1,11 @@
-appName: arco
+appName: quickstart
 
 gitUrl: https://github.com
 gitRevision: main
-gitUsername: cvicens
+gitUsername: atarazana
 baseRepoName: kitchensink-conf
+kitchensinkRepoName: kitchensink
+kitchensinkRevision: main
 
 ocpVersion: "4.12"
 
@@ -13,7 +15,7 @@ containerRegistryOrg: varadero
 cicdNamespace: kitchensink-cicd
 
 buildahBuilderImage: registry.redhat.io/rhel8/buildah@sha256:6a68ece207bc5fd8db2dd5cc2d0b53136236fb5178eb5b71eebe5d07a3c33d13
-jbossEapBuilderImage: image-registry.openshift-image-registry.svc:5000/kitchensink-cicd/jboss-eap-openshift:1.2
+jbossEapBuilderImage: image-registry.openshift-image-registry.svc:5000/openshift/jboss-eap72-openshift:1.2
 
 sourceWorkspaceSize: 10Gi
 cacheWorkspaceSize: 10Gi
@@ -30,8 +32,8 @@ gitSslVerify: true
 # Pipelines have these stages => overlays
 overlays: "dev,test"
 
-# Service names Gramola is made of services, these are their names
-kitchensinkServiceName: saer
+# Service names Kitchensink is made of services, these are their names
+kitchensinkServiceName: kitchensink
 
 # Overlays relative path in the config repository
 kitchensinkOverlayPath: ./kitchensink-deployment/overlays
