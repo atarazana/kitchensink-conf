@@ -33,14 +33,6 @@ spec:
     - name: PATH_CONTEXT
       type: string
       default: .
-    - name: QUARKUS_PROFILE
-      type: string
-      default: prod
-    - name: DB_HOST
-      type: string
-      default: postgresql-db
-    - name: REVISION_NAME
-      type: string
     - name: GIT_SSL_VERIFY
       type: string
       default: '{{ .Values.gitSslVerify }}'
