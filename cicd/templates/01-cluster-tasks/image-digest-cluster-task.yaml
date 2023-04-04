@@ -34,9 +34,6 @@ spec:
       name: eval
       resources: {}
       workingDir: $(workspaces.source.path)
-      args:
-        - '$(params.SELECT_EXPRESSIONS[*])'
-        - '$(params.NEW_VALUES[*])'
       script: |
         #!/bin/sh
 
