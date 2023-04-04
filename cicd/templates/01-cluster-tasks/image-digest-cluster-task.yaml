@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  annotations:
+    tekton.dev/displayName: Image Digest cluster task
+    tekton.dev/pipelines.minVersion: '0.19'
+    tekton.dev/tags: 'jq, oc'
+  name: image-digest
+
+  labels:
+    app.kubernetes.io/version: '0.1'
+    operator.tekton.dev/provider-type: redhat
+spec:
+  description: >-
+    These Task finds an image and returns the digest.
+  params:
+    - description: Overlays path
+      name: OVERLAYS_PATH
+      type: string
+    - description: Overlays where the file to be updated is
+      name: OVERLAY
+      type: string
+    - description: File to update in-place, it should be a YAML file
+      name: FILE_NAME
+      type: string
+      default: "kustomization.yml"
+    - description: Overlay suffix if twin overlay
+      name: TWIN_OVERLAY_SUFFIX
+      type: string
+      default: "cloud"
+    - description: Expression to select the node to update
+      name: SELECT_EXPRESSIONS
+      type: array
+    - description: New array of values.
+      name: NEW_VALUES
+      type: array
+    - default: quay.io/atarazana/yq:0.0.1
+      description: the image used where the yq binary is
+      name: TASK_IMAGE
+      type: string
+  results:
+    - description: Digest of the image just built.
+      name: IMAGE_DIGEST
+    - description: Digest of the image just built without "sha256:"
+      name: IMAGE_DIGEST_CLEAN
+  steps:
+    - image: $(params.TASK_IMAGE)
+      name: eval
+      resources: {}
+      workingDir: $(workspaces.source.path)
+      args:
+        - '$(params.SELECT_EXPRESSIONS[*])'
+        - '$(params.NEW_VALUES[*])'
+      script: |
+        #!/bin/sh
+
+        IMAGE_DIGEST = oc get imagetags $(params.IMAGE_TAG_NAME) | jq -r .image.metadata.name
+        echo "IMAGE_DIGEST: ${IMAGE_DIGEST}"
+        NEW_IMAGE_TAG = ("${IMAGE_DIGEST}" =~ /.*\:(.*)/)[0][1]
+        echo "NEW_IMAGE_TAG: ${NEW_IMAGE_TAG}"
+
+        echo -n ${IMAGE_DIGEST} > $(results.IMAGE_DIGEST)
+        echo -n ${NEW_IMAGE_TAG} > $(results.IMAGE_DIGEST_CLEAN)
+  workspaces:
+    - mountPath: /workspace/source
+      name: source
