@@ -34,7 +34,7 @@ spec:
     - description: New array of values.
       name: NEW_VALUES
       type: array
-    - default: quay.io/atarazana/yq:0.0.1
+    - default: quay.io/atarazana/jq:0.0.2
       description: the image used where the yq binary is
       name: TASK_IMAGE
       type: string
