@@ -23,7 +23,7 @@ images:
   #   newTag: latest
   - name: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink:latest
     newName: image-registry.openshift-image-registry.svc:5000/kitchensink-cicd/kitchensink@sha256
-    newTag: b6b99162304c46c5ceee695d8220799a1d0081af607abbf8aba5cc56204fa3df
+    newTag: e50011123d56ec3918198f03f13f2fe7ad6b7d8db64c5edee82d056e20a99011
 patchesJson6902:
   - target:
       group: apps
