@@ -82,7 +82,8 @@ spec:
     - name: digest
       params:
         - name: IMAGE_TAG
-          value: "$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
+          # value: "$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
+          value: "{{ .Values.kitchensinkServiceName }}:latest"
       runAfter:
         - build
       taskRef:
