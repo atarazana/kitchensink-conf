@@ -40,5 +40,5 @@ stringData:
 EOF
 
 oc annotate -n ${CICD_NAMESPACE} secret ${GIT_PAT_SECRET_NAME} \
-  "tekton.dev/git-0=https://${GIT_HOST}"
+  "tekton.dev/git-0=${GIT_HOST}"
 

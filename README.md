@@ -551,32 +551,3 @@ curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/gramola-gate
 oc start-build bc/jenkins-agent-maven-gitops-bc -n ${JENKINS_NAMESPACE} 
 ```
 
-# Useful commands
-
-# Sync Root Apps alone
-
-```sh
-argocd app sync gramola-root-app-dev
-argocd app sync gramola-root-app-test
-argocd app sync gramola-root-app-test-cloud
-```
-
-# Sync apps manually
-
-```sh
-argocd app sync economiacircular-app-dev
-argocd app sync economiacircular-app-test
-argocd app sync economiacircular-app-test-cloud
-```
-
-# Sync children apps (app of apps)
-
-```sh
-argocd app sync -l app.kubernetes.io/instance=gramola-root-app
-argocd app sync -l app.kubernetes.io/instance=gramola-root-app-dev
-argocd app sync -l app.kubernetes.io/instance=gramola-root-app-test
-argocd app sync -l app.kubernetes.io/instance=gramola-root-app-test-cloud
-```
-
-# AUX
-git clone https://oauth2:1AbCDeF_g2HIJKLMNOPqr@gitlab.com/yourusername/project.git project
