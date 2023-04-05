@@ -54,8 +54,10 @@ spec:
 
         if [ -z ${IMAGE_DIGEST_CLEAN} ]; then
             echo "ERROR => IMAGE_DIGEST_CLEAN IS EMPTY"
+            echo -n "false" > $(results.SUCCESS)
         else
             echo "SUCCESS => IMAGE_DIGEST_CLEAN: ${IMAGE_DIGEST_CLEAN}"
-            # echo -n ${IMAGE_DIGEST_CLEAN} > $(results.IMAGE_DIGEST_CLEAN)
+            echo -n ${IMAGE_DIGEST_CLEAN} > $(results.IMAGE_DIGEST_CLEAN)
+            echo -n "true" > $(results.SUCCESS)
         fi
 
