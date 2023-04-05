@@ -29,6 +29,7 @@ spec:
         application: kitchensink
         deployment: kitchensink
     spec:
+      serviceAccountName: {{ .Values.kitchensinkServiceAccountName }}
       containers:
         - name: kitchensink
           resources:

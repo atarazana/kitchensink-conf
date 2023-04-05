@@ -4,3 +4,5 @@ clusterName: "local"
 
 baseNamespace: demo-6
 builderImage: jboss-eap72-openshift:1.2
+
+kitchensinkServiceAccountName: kitchensink-sa
