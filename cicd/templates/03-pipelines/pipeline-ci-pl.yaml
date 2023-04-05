@@ -148,7 +148,7 @@ spec:
             # - "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
             # - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
             - "$(tasks.digest.results.IMAGE_DIGEST_CLEAN)"
-            - "image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink"
+            - "image-registry.openshift-image-registry.svc:5000/{{ .Values.cicdNamespace }}/kitchensink"
       runAfter:
         - fetch-config-repository
       taskRef:
