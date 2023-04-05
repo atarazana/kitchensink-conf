@@ -19,7 +19,7 @@ secretGenerator:
 images:
   - name: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink:latest
     newName: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink
-    newTag: latest
+    newTag: 1633a8bcddb9f65c68fab5e15aee660b705bb986
 patchesJson6902:
   - target:
       group: apps
