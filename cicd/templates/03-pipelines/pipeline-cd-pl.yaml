@@ -79,7 +79,7 @@ spec:
             # - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
             - "image-registry.openshift-image-registry.svc:5000/{{ .Values.cicdNamespace }}/kitchensink@sha256"
       runAfter:
-        # - argocd-sync
+        - argocd-sync
         - fetch-config-repository
       taskRef:
         kind: ClusterTask
