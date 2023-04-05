@@ -126,7 +126,7 @@ spec:
         - name: sslVerify
           value: $(params.GIT_SSL_VERIFY)
       runAfter:
-        - find-digest
+        - digest
       taskRef:
         kind: ClusterTask
         name: git-clone
