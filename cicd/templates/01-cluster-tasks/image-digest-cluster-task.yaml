@@ -45,10 +45,10 @@ spec:
         echo "NAMESPACE_CLAUSE: ${NAMESPACE_CLAUSE}"
 
         IMAGE_DIGEST=$(oc get imagetags ${IMAGE_TAG} ${NAMESPACE_CLAUSE} | jq -r .image.metadata.name)
-        echo "IMAGE_TAG: ${IMAGE_TAG}"
+        echo "IMAGE_DIGEST: ${IMAGE_DIGEST}"
 
         PATTERN='.*\:(.*)'
-        if [[ ${IMAGE_TAG} =~ ${PATTERN} ]]; then 
+        if [[ ${IMAGE_DIGEST} =~ ${PATTERN} ]]; then 
           IMAGE_DIGEST_CLEAN=${BASH_REMATCH[1]}
         fi
 
