@@ -57,7 +57,7 @@ spec:
             echo -n "false" > $(results.SUCCESS)
         else
             echo "SUCCESS => IMAGE_DIGEST_CLEAN: ${IMAGE_DIGEST_CLEAN}"
-            echo -n ${IMAGE_DIGEST_CLEAN} > $(results.IMAGE_DIGEST_CLEAN)
-            echo -n "true" > $(results.SUCCESS)
+            echo -n ${IMAGE_DIGEST_CLEAN} > /tekton/results/IMAGE_DIGEST_CLEAN
+            echo -n "true" > /tekton/results/SUCCESS
         fi
 
