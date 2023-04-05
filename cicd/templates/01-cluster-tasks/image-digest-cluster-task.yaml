@@ -44,9 +44,7 @@ spec:
         NAMESPACE_CLAUSE=$([[ ! -z "${SEARCH_NAMESPACE}" ]] && echo "-n ${SEARCH_NAMESPACE}" || echo "")
         echo "NAMESPACE_CLAUSE: ${NAMESPACE_CLAUSE}"
 
-        echo "IMAGE_DIGEST =< oc get imagetags ${IMAGE_TAG} ${NAMESPACE_CLAUSE} | jq -r .image.metadata.name"
-
-        IMAGE_DIGEST=$(oc get imagetags ${IMAGE_TAG} ${NAMESPACE_CLAUSE} | jq -r .image.metadata.name)
+        IMAGE_DIGEST=$(oc get imagetags ${IMAGE_TAG} ${NAMESPACE_CLAUSE} -o json | jq -r .image.metadata.name)
         echo "IMAGE_DIGEST: ${IMAGE_DIGEST}"
 
         PATTERN='.*\:(.*)'

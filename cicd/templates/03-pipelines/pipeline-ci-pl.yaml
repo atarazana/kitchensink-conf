@@ -117,6 +117,10 @@ spec:
     #     - name: source
     #       workspace: workspace-source
     - name: fetch-config-repository
+      when:
+        - input: "$(tasks.digest.results.SUCCESS)"
+          operator: in
+          values: ['true']
       params:
         - name: url
           value: $(params.GIT_REPO_CONFIG)
