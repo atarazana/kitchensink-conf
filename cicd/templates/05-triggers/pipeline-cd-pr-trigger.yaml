@@ -344,7 +344,7 @@ spec:
     spec:
       params:
         - name: APP_NAME
-          value: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}"
+          value: "{{ .Values.kitchensinkArgoAppBaseName }}"
         - name: GIT_PROVIDER
           value: $(tt.params.gitProvider)
         - name: GIT_REPO_CONFIG

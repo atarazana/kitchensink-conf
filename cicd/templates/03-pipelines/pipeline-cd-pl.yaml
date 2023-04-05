@@ -11,7 +11,7 @@ spec:
   params:
     - name: APP_NAME
       type: string
-      default: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}"
+      default: "{{ .Values.kitchensinkArgoAppBaseName }}"
     - name: GIT_PROVIDER
       type: string
     - name: GIT_REPO_CONFIG
@@ -34,17 +34,15 @@ spec:
       type: string
       default: '{{ .Values.gitSslVerify }}'
   tasks:
-    # - name: argocd-sync
-    #   params:
-    #     - name: APP_NAME
-    #       value: $(params.APP_NAME)-root-app-$(params.OVERLAY)
-    #     - name: SUB_OVERLAYS_TO_UPDATE
-    #       value: {{ .Values.kitchensinkSubOverlays | lower | quote }}
-    #     - name: WAIT_FOR_HEALTH
-    #       value: 'FALSE' # CVA switch on in production
-    #   taskRef:
-    #     kind: ClusterTask
-    #     name: argocd-sync
+    - name: argocd-sync
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)-$(params.OVERLAY)
+        - name: WAIT_FOR_HEALTH
+          value: 'FALSE' # CVA switch on in production
+      taskRef:
+        kind: ClusterTask
+        name: argocd-sync
     - name: fetch-config-repository
       params:
         - name: url

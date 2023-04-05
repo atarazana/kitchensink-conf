@@ -7,6 +7,8 @@ baseRepoName: kitchensink-conf
 kitchensinkRepoName: kitchensink
 kitchensinkRevision: main
 
+kitchensinkArgoAppBaseName: kitchensink-kustomized-helm-app
+
 ocpVersion: "4.12"
 
 containerRegistryServer: quay.io
