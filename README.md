@@ -19,83 +19,21 @@ Let's prepare some environment variables:
 ```sh
 export GIT_REVISION=main
 
-# Gitea
-export GIT_USERNAME=gitea
-export GIT_PASSWORD=openshift
-
 export GIT_CONF_REPONAME=kitchensink-conf
 export KITCHENSINK_REPO_NAME=kitchensink
 
-# Source Repo to Migrate from
-export GIT_USERNAME_SRC=cvicens
-export GIT_URL_BASE_SRC=https://github.com/atarazana
+export GIT_HOST=https://github.com
+export GIT_USERNAME=cvicens
+export GIT_ORG=atarazana
+export GIT_URL_BASE_SRC=${GIT_HOST}/${GIT_ORG}
 export GIT_URL_KITCHENSINK_SRC=${GIT_URL_BASE_SRC}/${KITCHENSINK_REPO_NAME}
 export GIT_CONF_URL_SRC=${GIT_URL_BASE_SRC}/${GIT_CONF_REPONAME}
 ```
 
-We need some sensitive data, your PAT for the source repo:
-
-```sh
-export GIT_HOST=$(oc get route/repository -n gitea-system -o jsonpath='{.spec.host}')
-
-export GIT_PAT=$(curl -k -s -X 'POST' -H "Content-Type: application/json"  -k -d '{"name":"cicd'"${RANDOM}"'", "scopes":["repo"]}' -u ${GIT_USERNAME}:${GIT_PASSWORD} https://${GIT_HOST}/api/v1/users/${GIT_USERNAME}/tokens | jq -r .sha1)
-
-echo "GIT_PAT=${GIT_PAT}"
-```
-
-Now that we have a PAT we can use it to log in as and import the repositories containing both code and configuration, namely:\
+Create a PAT we can use it to log in as and import the repositories containing both code and configuration, namely:\
 
 - **Configuration:** https://github.com/atarazana/kitchensink-conf
 - **Kitchensink Service:** https://github.com/atarazana/kitchensink
-
-Run the following command to import these git repositories into Gitea.
-
-```sh
-curl -X 'POST' \
-  "https://${GIT_HOST}/api/v1/repos/migrate?token=${GIT_PAT}" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "auth_password": "'${GIT_PASSWORD_SRC}'",
-  "auth_username": "'${GIT_USERNAME_SRC}'",
-  "clone_addr": "'${GIT_CONF_URL_SRC}'.git",
-  "description": "kitchensink conf",
-  "issues": false,
-  "labels": false,
-  "lfs": false,
-  "milestones": false,
-  "private": true,
-  "pull_requests": false,
-  "releases": false,
-  "repo_name": "'${GIT_CONF_REPONAME}'",
-  "repo_owner": "'${GIT_USERNAME}'",
-  "service": "git",
-  "wiki": false
-}'
-
-curl -X 'POST' \
-  "https://${GIT_HOST}/api/v1/repos/migrate?token=${GIT_PAT}" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "auth_password": "'${GIT_PASSWORD_SRC}'",
-  "auth_username": "'${GIT_USERNAME_SRC}'",
-  "clone_addr": "'${GIT_URL_KITCHENSINK_SRC}'.git",
-  "description": "gramola events",
-  "issues": false,
-  "labels": false,
-  "lfs": false,
-  "milestones": false,
-  "private": true,
-  "pull_requests": false,
-  "releases": false,
-  "repo_name": "'${KITCHENSINK_REPO_NAME}'",
-  "repo_owner": "'${GIT_USERNAME}'",
-  "service": "git",
-  "wiki": false
-}'
-
-```
 
 # Log in ArgoCD with CLI
 
@@ -122,9 +60,12 @@ NOTE: We're covering Github in this guide if you use a different git server you 
 
 In order to refer to a repository in ArgoCD you have to register it before, the next command will do this for you asking for the repo url and the the Personal Access Token (PAT) to access to the repository. 
 
+```sh
+echo "Enter GIT_PAT: " && read -s GIT_PAT
+```
 
 ```sh
-argocd repo add https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}.git --username ${GIT_USERNAME} --password ${GIT_PAT} --upsert --grpc-web --insecure --insecure-skip-server-verification
+argocd repo add ${GIT_CONF_URL_SRC}.git --username ${GIT_USERNAME} --password ${GIT_PAT} --upsert --grpc-web --insecure --insecure-skip-server-verification
 ```
 
 Run this command to list the registered repositories.
@@ -216,7 +157,7 @@ spec:
           - CreateNamespace=true
       source:
         path: advanced/overlays/{{ env }}
-        repoURL: "https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}"
+        repoURL: "${GIT_CONF_URL_SRC}"
         targetRevision: ${GIT_REVISION}
         plugin:
           env:
@@ -271,7 +212,7 @@ spec:
           - CreateNamespace=true
       source:
         path: advanced/overlays/{{ env }}
-        repoURL: "https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}"
+        repoURL: "${GIT_CONF_URL_SRC}"
         targetRevision: ${GIT_REVISION}
         plugin:
           env:
@@ -305,9 +246,9 @@ Others, use the following command to get the server and point a browser to it us
 oc get route/myregistry-quay -n quay-system -o jsonpath='{.spec.host}'
 ```
 
-Log in with user `demos` and password `openshift`
+Log in with user `alpha` and password `openshift`
 
-The create a robot account named `cicd` and create repository `demos`.
+The create a robot account named `cicd` and create repository `kitchensink`, public.
 
 # Tekton Pipelines
 
@@ -315,8 +256,8 @@ Next command sets the environment variables to set the secret so that Tekton pip
 
 ```sh
 export CONTAINER_REGISTRY_SERVER=$(oc get route/myregistry-quay -n quay-system -o jsonpath='{.spec.host}')
-export CONTAINER_REGISTRY_ORG=demos
-export CONTAINER_REGISTRY_USERNAME="demos+cicd"
+export CONTAINER_REGISTRY_ORG=alpha
+export CONTAINER_REGISTRY_USERNAME="alpha+cicd"
 ```
 
 Deploy another ArgoCD app to deploy pipelines.
@@ -356,63 +297,9 @@ spec:
         helm:
           parameters:
             - name: baseRepoUrl
-              value: "https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}"
-            - name: username
-              value: "${GIT_USERNAME}"
-            - name: gitRevision
-              value: "${GIT_REVISION}"
-            - name: containerRegistryServer
-              value: ${CONTAINER_REGISTRY_SERVER}
-            - name: containerRegistryOrg
-              value: ${CONTAINER_REGISTRY_ORG}
-            - name: gitSslVerify
-              value: "true"
-        path: cicd
-        repoURL: "https://${GIT_HOST}/${GIT_USERNAME}/${GIT_CONF_REPONAME}"
-        targetRevision: ${GIT_REVISION}
-EOF
-```
-
-If github is used...
-
-```sh
-cat <<EOF | kubectl apply -n openshift-gitops -f -
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: kitchensink-cicd
-  namespace: openshift-gitops
-  labels:
-    argocd-root-app: "true"
-spec:
-  generators:
-  - list:
-      elements:
-      - cluster: in-cluster
-        ns: openshift-gitops
-  template:
-    metadata:
-      name: kitchensink-cicd
-      namespace: openshift-gitops
-      labels:
-        argocd-root-app-cloud: "true"
-      finalizers:
-      - resources-finalizer.argocd.argoproj.io
-    spec:
-      destination:
-        namespace: '{{ ns }}'
-        name: '{{ cluster }}'
-      project: default
-      syncPolicy:
-        automated:
-          selfHeal: true
-      source:
-        helm:
-          parameters:
-            - name: baseRepoUrl
               value: "${GIT_CONF_URL_SRC}"
             - name: username
-              value: "${GIT_USERNAME_SRC}"
+              value: "${GIT_USERNAME}"
             - name: gitRevision
               value: "${GIT_REVISION}"
             - name: containerRegistryServer
@@ -463,7 +350,7 @@ Create the secret with the user and password.
 
 # Add a Secret to pull images from the Quay installation
 
-In order to pull images from the deployment of Quay in project `quay-system` run this command that creates secrets with credentials to be used in `gramola-dev` and `gramola-test`. Then the secrets are linked to the default service account for `pulling` images.
+In order to pull images from the deployment of Quay in project `quay-system` run this command that creates secrets with credentials to be used in `kitchensink-dev` and `kitchensink-test`. Then the secrets are linked to the default service account for `pulling` images.
 
 ```sh
 export CONTAINER_REGISTRY_SECRET_NAME=$(yq eval '.containerRegistrySecretName' ./cicd/values.yaml)
@@ -508,51 +395,7 @@ oc login -u opentlc-mgr -p r3dh4t1! --server=https://api.cluster-rhpr5.rhpr5.san
 
 ## Creating Web Hooks
 
-Run the next command to create the webhooks for CI part of the Tekton pipelines.
-
-```sh
-KITCHENSINK_CI_EL_LISTENER_HOST=$(oc get route/el-kitchensink-ci-pl-push-gitea-listener -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
-
-curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${KITCHENSINK_REPO_NAME}/hooks" \
-  -H "accept: application/json" \
-  -H "Authorization: token ${GIT_PAT}" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "active": true,
-  "branch_filter": "*",
-  "config": {
-     "content_type": "json",
-     "url": "http://'"${KITCHENSINK_CI_EL_LISTENER_HOST}"'"
-  },
-  "events": [
-    "push" 
-  ],
-  "type": "gitea"
-}'
-```
-
-And, run the next command to create the webhooks for CD part of the Tekton pipelines.
-
-```sh
-KITCHENSINK_CD_EL_LISTENER_HOST=$(oc get route/el-kitchensink-cd-pl-pr-gitea-listener  -n ${CICD_NAMESPACE} -o jsonpath='{.spec.host}')
-
-curl -k -X 'POST' "https://${GIT_HOST}/api/v1/repos/${GIT_USERNAME}/${GIT_CONF_REPONAME}/hooks" \
-  -H "accept: application/json" \
-  -H "Authorization: token ${GIT_PAT}" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "active": true,
-  "branch_filter": "*",
-  "config": {
-     "content_type": "json",
-     "url": "http://'"${KITCHENSINK_CD_EL_LISTENER_HOST}"'"
-  },
-  "events": [
-    "pull_request" 
-  ],
-  "type": "gitea"
-}'
-```
+Use github ui to create webhooks for ci and cd pipelines.
 
 # Jenkins Pipelines
 

@@ -79,7 +79,7 @@ spec:
       taskRef:
         kind: ClusterTask
         name: openshift-client
-    - name: find-digest
+    - name: digest
       params:
         - name: IMAGE_TAG
           value: "$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
@@ -87,7 +87,7 @@ spec:
         - build
       taskRef:
         kind: ClusterTask
-        name: openshift-client
+        name: image-digest
     # - name: build
     #   params:
     #     - name: IMAGE
@@ -147,7 +147,7 @@ spec:
           value: 
             # - "$(tasks.build.results.IMAGE_DIGEST_CLEAN)"
             # - "{{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}@sha256"
-            - "$(tasks.find-digest.results.IMAGE_DIGEST_CLEAN)"
+            - "$(tasks.digest.results.IMAGE_DIGEST_CLEAN)"
             - "image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink"
       runAfter:
         - fetch-config-repository
@@ -174,7 +174,7 @@ spec:
             count: 0
             overlay: dev
             kustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml
-            imageDigestClean: $(tasks.find-digest.results.IMAGE_DIGEST_CLEAN)
+            imageDigestClean: $(tasks.digest.results.IMAGE_DIGEST_CLEAN)
             pipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
         - name: PAT_SECRET_NAME
           value: {{ .Values.gitPatSecretName }}
@@ -202,7 +202,7 @@ spec:
         # PR Body is a YAML with information for the next pipelines (stages)
         - name: PR_BODY
           value: |
-            command: UPDATE_IMAGE\nserviceName: {{ .Values.kitchensinkServiceName }}\ncount: 0\noverlay: dev\nkustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml\nimageDigestClean: $(tasks.find-digest.results.IMAGE_DIGEST_CLEAN)\npipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
+            command: UPDATE_IMAGE\nserviceName: {{ .Values.kitchensinkServiceName }}\ncount: 0\noverlay: dev\nkustomizationPath: {{ .Values.kitchensinkOverlayPath }}/dev/*/kustomization.yml\nimageDigestClean: $(tasks.digest.results.IMAGE_DIGEST_CLEAN)\npipelineName: {{ .Values.kitchensinkContinuosIntegrationPipeline }}
         - name: PAT_SECRET_NAME
           value: {{ .Values.gitPatSecretName }}
         - name: PAT_SECRET_KEY
