@@ -1,6 +1,7 @@
 old
 .old
 old.*
+*.old
 .vscode/
 all.yml
 *.token
