@@ -3,3 +3,4 @@ old
 old.*
 .vscode/
 all.yml
+*.token

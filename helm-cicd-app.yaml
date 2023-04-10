@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kitchensink-cicd
+  namespace: openshift-gitops
+  labels:
+    argocd-root-app: "true"
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: in-cluster
+        ns: openshift-gitops
+  template:
+    metadata:
+      name: kitchensink-cicd
+      namespace: openshift-gitops
+      labels:
+        argocd-root-app-cloud: "true"
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    spec:
+      destination:
+        namespace: '{{ ns }}'
+        name: '{{ cluster }}'
+      project: default
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        helm:
+          parameters:
+            - name: baseRepoUrl
+              value: "https://github.com/atarazana/kitchensink-conf"
+            - name: username
+              value: "cvicens"
+            - name: gitRevision
+              value: "main"
+            - name: containerRegistryServer
+              value: myregistry-quay-quay-system.apps.cluster-j46fg.j46fg.sandbox1745.opentlc.com
+            - name: containerRegistryOrg
+              value: alpha
+            - name: gitSslVerify
+              value: "true"
+        path: cicd
+        repoURL: "https://github.com/atarazana/kitchensink-conf"
+        targetRevision: main

@@ -11,10 +11,10 @@ spec:
       elements:
       - env: dev
         ns: demo-7-dev
-        desc: "Demo Dev"
+        desc: "Demo 7 Dev"
       - env: test
         ns: demo-7-test
-        desc: "Demo Test"
+        desc: "Demo 7 Test"
   template:
     metadata:
       name: kitchensink-kustomized-helm-app-{{ env }}
@@ -32,7 +32,7 @@ spec:
         kind: DeploymentConfig
         jqPathExpressions:
           - .spec.template.spec.containers[].image
-      project: default
+      project: kitchensink-project-{{ env }}
       syncPolicy:
         automated:
           selfHeal: true
