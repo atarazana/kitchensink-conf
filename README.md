@@ -248,7 +248,7 @@ oc get route/myregistry-quay -n quay-system -o jsonpath='{.spec.host}'
 
 Log in with user `alpha` and password `openshift`
 
-The create a robot account named `cicd` and create repository `kitchensink`, public.
+Now create repository `kitchensink`, public. Then create a robot account named `cicd` and give it `Read` access to `kitchensink`.
 
 # Tekton Pipelines
 
