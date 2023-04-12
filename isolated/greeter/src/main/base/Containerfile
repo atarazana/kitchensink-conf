@@ -1,6 +1,5 @@
 ARG UBI8_TAG
 
-
 FROM registry.access.redhat.com/ubi8:${UBI8_TAG}
 
 ARG JVM_VERSION

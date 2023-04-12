@@ -6,10 +6,18 @@ If you have already deployed an instance of ACM or you want to [install](https:/
 
 # Install ArgoCD, Pipelines and Quay using the operators
 
-Install ArgoCD Operator, Openshift Pipelines and Quay (simplified non-supported configuration):
+Go to https://github.com/atarazana/kitchensink and follow instructions there.
 
-```sh
-until oc apply -k util/bootstrap/; do sleep 2; done
+# Reset kustomization files
+
+Uncomment and delete current image stanza. Stanza should look like this one, but pointing to the right namespace depending on the overlay.
+
+```yaml
+images:
+  # RESET with this data
+  - name: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink:latest
+    newName: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink
+    newTag: latest
 ```
 
 # Migrate from github
