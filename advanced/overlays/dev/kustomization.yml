@@ -18,6 +18,9 @@ secretGenerator:
       - DB_NAME=kitchensink
 images:
   # RESET with this data
+  # - name: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink:latest
+  #   newName: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink
+  #   newTag: latest
   - name: image-registry.openshift-image-registry.svc:5000/demo-7-dev/kitchensink:latest
     newName: image-registry.openshift-image-registry.svc:5000/kitchensink-cicd/kitchensink@sha256
     newTag: 59dbbbee15cb295bd2b323b80390183fbf0f4ed612f4c1c252f0898783e8c21a
