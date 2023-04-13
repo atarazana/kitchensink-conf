@@ -46,6 +46,6 @@ spec:
           env:
             - name: DEBUG
               value: 'false'
-            - name: BASE_NAMESPACE
-              value: '{{ ns }}'
+            # - name: BASE_NAMESPACE
+            #   value: '{{ ns }}'
           name: kustomized-helm
