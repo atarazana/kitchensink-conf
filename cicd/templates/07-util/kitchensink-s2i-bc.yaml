@@ -43,8 +43,8 @@ spec:
   source:
     type: Git
     git:
-      uri: '{{ .Values.gitUrl }}/{{ .Values.gitUsername }}/kitchensink-cde-mig'
-      ref: develop
+      uri: '{{ .Values.kitchensinkRepoUrl }}'
+      ref: '{{ .Values.kitchensinkRevision }}'
     sourceSecret:
       name: {{ .Values.gitPatSecretName }}
   triggers:

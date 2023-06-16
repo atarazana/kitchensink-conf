@@ -33,11 +33,18 @@ spec:
     - name: GIT_SSL_VERIFY
       type: string
       default: '{{ .Values.gitSslVerify }}'
+    - name: WAIT_FOR_HEALTH
+      type: string
+      default: '{{ .Values.kitchensinkWaitForHealth }}'
   tasks:
     - name: argocd-sync
       params:
         - name: APP_NAME
-          value: $(params.APP_NAME)-$(params.OVERLAY)
+          {{ if .Values.username }}
+          value: "$(params.APP_NAME)-$(params.OVERLAY)-{{ .Values.username }}"
+          {{ else }}
+          value: "$(params.APP_NAME)-$(params.OVERLAY)"
+          {{ end }}
         - name: WAIT_FOR_HEALTH
           value: 'FALSE' # CVA switch on in production
       taskRef:

@@ -348,10 +348,9 @@ spec:
         - name: GIT_PROVIDER
           value: $(tt.params.gitProvider)
         - name: GIT_REPO_CONFIG
-          # value: "{{ .Values.gitUrl }}/{{ .Values.gitUsername }}/{{ .Values.baseRepoName }}"
-          value: "{{ .Values.baseRepoUrl }}"
+          value: "{{ .Values.kitchensinkConfRepoUrl }}"
         - name: GIT_REVISION_CONFIG
-          value: "{{ .Values.gitRevision }}"
+          value: "{{ .Values.kitchensinkConfRevision }}"
         - name: IMAGE_DIGEST_CLEAN
           value: $(tt.params.imageDigestClean)
         - name: COUNT

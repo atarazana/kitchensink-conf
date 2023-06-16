@@ -192,7 +192,7 @@ spec:
     spec:
       params:
         - name: APP_NAME
-          value: "{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}"
+          value: "{{ .Values.kitchensinkArgoAppBaseName }}"
         - name: GIT_PROVIDER
           value: $(tt.params.gitProvider)
         - name: GIT_REPO
@@ -202,10 +202,9 @@ spec:
         - name: GIT_REVISION
           value: $(tt.params.gitRevision)
         - name: GIT_REPO_CONFIG
-          # value: "{{ .Values.gitUrl }}/{{ .Values.gitUsername }}/{{ .Values.baseRepoName }}"
-          value: "{{ .Values.baseRepoUrl }}"
+          value: "{{ .Values.kitchensinkConfRepoUrl }}"
         - name: GIT_REVISION_CONFIG
-          value: "{{ .Values.gitRevision }}"
+          value: "{{ .Values.kitchensinkConfRevision }}"
         - name: IMAGE_NAME
           value: >-
             {{ .Values.containerRegistryServer }}/{{ .Values.containerRegistryOrg }}/{{ .Values.appName }}-{{ .Values.kitchensinkServiceName }}
