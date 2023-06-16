@@ -35,6 +35,8 @@ gitSslVerify: true
 
 # Pipelines have these stages => overlays
 overlays: "dev,test"
+overlayDevNamespace: demo-7-dev
+overlayTestNamespace: demo-7-test
 
 # Service names Kitchensink is made of services, these are their names
 kitchensinkServiceName: kitchensink

@@ -12,10 +12,10 @@ spec:
     name: in-cluster
     namespace: demo-6
   ignoreDifferences:
-    - group: apps.openshift.io
+    - group: apps
+      kind: Deployment
       jqPathExpressions:
         - '.spec.template.spec.containers[].image'
-      kind: DeploymentConfig
   project: default
   source:
     helm:

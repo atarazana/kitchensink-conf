@@ -28,10 +28,10 @@ spec:
         namespace: '{{ ns }}'
         name: in-cluster
       ignoreDifferences:
-      - group: apps.openshift.io
-        kind: DeploymentConfig
-        jqPathExpressions:
-          - .spec.template.spec.containers[].image
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - '.spec.template.spec.containers[].image'
       project: default
       syncPolicy:
         automated:

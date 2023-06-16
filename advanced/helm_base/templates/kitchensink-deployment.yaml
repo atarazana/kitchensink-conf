@@ -3,6 +3,8 @@ apiVersion: apps/v1
 metadata:
   annotations:
     app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"kitchensink-db"}]'
+    # image.openshift.io/triggers: >-
+    #   [{"from":{"kind":"ImageStreamTag","name":"kitchensink:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"kitchensink\")].image","pause":"false"}]
   name: kitchensink
   labels:
     app: eap72-basic-s2i

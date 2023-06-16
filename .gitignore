@@ -5,3 +5,4 @@ old.*
 .vscode/
 all.yml
 *.token
+.DS_Store

@@ -10,7 +10,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: kitchensink-sa
-  namespace: demo-7-dev
+  namespace: {{ .Values.overlayDevNamespace }}
 - kind: ServiceAccount
   name: kitchensink-sa
-  namespace: demo-7-test
+  namespace: {{ .Values.overlayTestNamespace }}
