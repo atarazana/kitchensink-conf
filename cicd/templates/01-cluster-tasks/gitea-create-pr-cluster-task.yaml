@@ -5,7 +5,12 @@ metadata:
     tekton.dev/displayName: Gitea create pull request cluster task
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'pr, gitea'
+  
+  {{ if .Values.username }}
+  name: gitea-pr-create-{{ .Values.username }}
+  {{ else }}
   name: gitea-pr-create
+  {{ end }}
 
   labels:
     app.kubernetes.io/version: '0.1'

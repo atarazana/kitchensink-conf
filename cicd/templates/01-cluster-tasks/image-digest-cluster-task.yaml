@@ -5,7 +5,12 @@ metadata:
     tekton.dev/displayName: Image Digest cluster task
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'jq, oc'
+  
+  {{ if .Values.username }}
+  name: image-digest-{{ .Values.username }}
+  {{ else }}
   name: image-digest
+  {{ end }}
 
   labels:
     app.kubernetes.io/version: '0.1'

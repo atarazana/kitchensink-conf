@@ -9,8 +9,8 @@ roleRef:
   name: system:image-puller
 subjects:
 - kind: ServiceAccount
-  name: kitchensink-sa
+  name: {{ .Values.kitchensinkServiceAccountName }}
   namespace: {{ .Values.overlayDevNamespace }}
 - kind: ServiceAccount
-  name: kitchensink-sa
+  name: {{ .Values.kitchensinkServiceAccountName }}
   namespace: {{ .Values.overlayTestNamespace }}

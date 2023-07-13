@@ -22,7 +22,11 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  {{ if .Values.username }}
+  name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrole-{{ .Values.username }}
+  {{ else }}
   name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrole
+  {{ end }}
   namespace: {{ .Values.cicdNamespace }}
 rules:
   ##
@@ -62,7 +66,12 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  {{ if .Values.username }}
+  name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrolebinding-{{ .Values.username }}
+  {{ else }}
   name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrolebinding
+  {{ end }}
+  namespace: {{ .Values.cicdNamespace }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.jenkinsServiceAccountName }}
@@ -70,6 +79,10 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+  {{ if .Values.username }}
+  name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrole-{{ .Values.username }}
+  {{ else }}
   name: {{ .Values.jenkinsServiceAccountName }}-sync-clusterrole
+  {{ end }}
 
 

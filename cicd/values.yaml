@@ -9,6 +9,8 @@ kitchensinkConfRepoUrl: https://github.com/atarazana/kitchensink-conf
 
 kitchensinkArgoAppBaseName: kitchensink-kustomized-helm-app
 
+kitchensinkServiceAccountName: kitchensink-sa
+
 ocpVersion: "4.12"
 
 containerRegistryServer: quay.io

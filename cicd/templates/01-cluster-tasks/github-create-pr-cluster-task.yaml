@@ -5,7 +5,12 @@ metadata:
     tekton.dev/displayName: GitHub create pull request cluster task
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'pr, github'
+  
+  {{ if .Values.username }}
+  name: github-pr-create-{{ .Values.username }}
+  {{ else }}
   name: github-pr-create
+  {{ end }}
 
   labels:
     app.kubernetes.io/version: '0.1'

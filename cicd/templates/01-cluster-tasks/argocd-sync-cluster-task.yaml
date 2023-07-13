@@ -5,7 +5,13 @@ metadata:
     tekton.dev/displayName: GitHub create pull request cluster task
     tekton.dev/pipelines.minVersion: '0.19'
     tekton.dev/tags: 'argocd, gitops'
+  
+  {{ if .Values.username }}
+  name: argocd-sync-{{ .Values.username }}
+  {{ else }}
   name: argocd-sync
+  {{ end }}
+
   labels:
     app.kubernetes.io/version: '0.1'
     operator.tekton.dev/provider-type: redhat
