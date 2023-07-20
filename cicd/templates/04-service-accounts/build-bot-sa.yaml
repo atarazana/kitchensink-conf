@@ -6,7 +6,9 @@ metadata:
   namespace: {{ .Values.cicdNamespace }}
 secrets:
 - name: {{ .Values.gitPatSecretName }}
+{{- if .Values.containerRegistrySecretName }}
 - name: {{ .Values.containerRegistrySecretName }}
+{{- end }}
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

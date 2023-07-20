@@ -29,7 +29,7 @@ cacheWorkspaceSize: 10Gi
 pipelinesServiceAccountName: build-bot
 jenkinsServiceAccountName: jenkins-bot
 
-containerRegistrySecretName: container-registry-secret
+# containerRegistrySecretName: container-registry-secret
 gitPatSecretName: git-pat-secret
 gitPatSecretKey: password
 
