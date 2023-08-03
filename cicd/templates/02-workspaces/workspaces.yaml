@@ -10,15 +10,15 @@ spec:
   resources:
     requests:
       storage: {{ .Values.sourceWorkspaceSize }}
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: "{{ .Values.kitchensinkServiceName }}-cache-pvc"
-  namespace: {{ .Values.cicdNamespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.cacheWorkspaceSize }}
+# ---
+# kind: PersistentVolumeClaim
+# apiVersion: v1
+# metadata:
+#   name: "{{ .Values.kitchensinkServiceName }}-cache-pvc"
+#   namespace: {{ .Values.cicdNamespace }}
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: {{ .Values.cacheWorkspaceSize }}
