@@ -55,11 +55,11 @@ spec:
                 - /bin/bash
                 - '-c'
                 - /opt/eap/bin/readinessProbe.sh false
-            initialDelaySeconds: 90
+            initialDelaySeconds: 20
             timeoutSeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
             successThreshold: 1
-            failureThreshold: 5
+            failureThreshold: 10
           terminationMessagePath: /dev/termination-log
           name: kitchensink
           livenessProbe:
@@ -68,11 +68,11 @@ spec:
                 - /bin/bash
                 - '-c'
                 - /opt/eap/bin/livenessProbe.sh
-            initialDelaySeconds: 90
+            initialDelaySeconds: 20
             timeoutSeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
             successThreshold: 1
-            failureThreshold: 5
+            failureThreshold: 10
           env:
             - name: JGROUPS_PING_PROTOCOL
               value: dns.DNS_PING
